@@ -28,7 +28,7 @@ class Derivative {
         double h = 1./L;
         double[] x = new double[L+1];
         x[0] = 0.;
-        for (int j = 1;j <= L; j++){
+        for (int j = 1;j<=L; j++){
             x[j] = x[j-1] + h;
         }
 
@@ -49,21 +49,14 @@ class Derivative {
         }
 
         for (int i = 0; i < L/(node-1); i++ ){
-            for (int j = i * (node-1); j < (node-1) * (i+1); j++){
+            for (int j = i * (node-1); j <= (node-1) * (i+1); j++){
                 uDerivativeNewMethod[j] = (u[(2*i+1)*(node-1)/2]-u[i*(node-1)]) * PhiDerivative[j]/(Phi[(2*i+1)*(node-1)/2]-Phi[i*(node-1)]);
-//                uDerivativeNewMethod[j] = newMethodDerivative1.apply(x[i], u[i]) * newMethodDerivative2.apply(x[j]);
-                //newMethodDerivative1 = (u[i*(node-1)]-2.*u[(2*i+1)*(node-1)/2.]+u[(i+1)*(node-1)]) - (Math.cos(x[i*(node-1)]*Math.PI) - 2.*Math.cos(x[[(2*i+1)*(node-1)/2.]]*Math.PI) + Math.cos(x[i+1)*(node-1)]*Math.PI))
-                //newMethodDerivative2 - -Math.exp(-x[j]/epsilon)/epsilon
-
             }
         }
 
         double[] norm = new double[L+1];
         for (int i=0;i<=L;i++){
-//            norm[i] = epsilon*Math.abs(proizvU[i]-(-Math.PI*Math.sin(Math.PI*x[i]) - Math.exp(-x[i]/epsilon)/epsilon));
-
             norm[i] = epsilon*Math.abs(uDerivativeNewMethod[i] - uAccuracyDerivative[i]);
-                    //(-Math.PI*Math.sin(Math.PI*x[i]) - Math.exp(-x[i]/epsilon)/epsilon));
         }
         double maxNorm = 0.;
         for(int i=0;i<=L;i++){
@@ -93,8 +86,8 @@ public class ZX {
         }
         for (int i=1;i<=L;i++){
             proizvU[i] = (U[i] - U[i-1])/hh;
-            proizvPogranSloiU[i] = (-1./epsilon)*Math.exp(-x[i]/epsilon)*(U[i] - U[i-1])/
-                    (Math.exp(-x[i]/epsilon) - Math.exp(-x[i-1]/epsilon));
+//            proizvPogranSloiU[i] = (-1./epsilon)*Math.exp(-x[i]/epsilon)*(U[i] - U[i-1])/
+//                    (Math.exp(-x[i]/epsilon) - Math.exp(-x[i-1]/epsilon));
         }
         //вычисление первой производной на 5 точках
         for (int i=2;i<=L-2;i=i+4){
@@ -105,7 +98,7 @@ public class ZX {
             proizvU[i+2] = (U[i] - U[i-1])/hh;
         }
 
-        for (int i=2;i<L-2;i=i+4){
+        for (int i=2;i<=L-2;i=i+4){
             proizvPogranSloiU[i-2] = (-1./epsilon)*Math.exp(-x[i-2]/epsilon)*(U[i] - U[i-1])/
                     (Math.exp(-x[i]/epsilon) - Math.exp(-x[i-1]/epsilon));
             proizvPogranSloiU[i-1] = (-1./epsilon)*Math.exp(-x[i-1]/epsilon)*(U[i] - U[i-1])/
@@ -339,12 +332,11 @@ public class ZX {
 
     public static void main(String[] args) {
         double a = 0.;
-        double epsilon = 1./1.;
+        double epsilon = 1./16.;
         int node = 5;
-        Derivative firstDerivative = new Derivative(node, x -> Math.cos(Math.PI * x) + Math.exp(x/(-epsilon)), x -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon, x -> Math.exp(-x/epsilon), x -> -Math.exp(-x/epsilon)/epsilon);
+        Derivative firstDerivative = new Derivative(node, x -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), x -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon, x -> Math.exp(-x/epsilon), x -> -Math.exp(-x/epsilon)/epsilon);
         for (int i=32;i<=1024;i=2*i){
-//            double b = findSecondUexp(i, epsilon);
-// Анастасия
+//            double b = findUexp(i, epsilon);
             double b = firstDerivative.find(i, epsilon);
             double four = a/b;
             a = b;
