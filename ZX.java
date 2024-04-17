@@ -2,8 +2,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 class Derivative {
-    int N;
-    double epsilon;
     int node;
     Function<Double, Double> function;
     Function<Double, Double> phi;
@@ -11,10 +9,7 @@ class Derivative {
     Function<Double, Double> accuracyDerivative;
     BiFunction<Double, Double, Double> newMethodDerivative1;
     Function<Double, Double> newMethodDerivative2;
-    public Derivative (int N, double epsilon, int node, Function<Double, Double> function, Function<Double,
-            Double> accuracyDerivative, Function<Double, Double> phi, Function<Double, Double> phiDerivative){
-        this.N = N;
-        this.epsilon = epsilon;
+    public Derivative (int node, Function<Double, Double> function, Function<Double,Double> accuracyDerivative, Function<Double, Double> phi, Function<Double, Double> phiDerivative){
         this.node = node;
         this.function = function;
         this.accuracyDerivative = accuracyDerivative;
@@ -23,7 +18,7 @@ class Derivative {
     }
 
 
-    public double find (){
+    public double find (int N, double epsilon){
         int L = (node - 1) * (N - 1);
         double[] u = new double[L+1];
         double[] uAccuracyDerivative = new double[L+1];
@@ -51,11 +46,6 @@ class Derivative {
         }
         for (int i=0;i<=L;i++) {
             uAccuracyDerivative[i] = accuracyDerivative.apply(x[i]);
-        }
-        for (int i=(node-1)/2; i<=L-(node-1)/2; i++){
-            for (int j = 0; j < 5; j++){
-
-            }
         }
 
         for (int i = 0; i < L/(node-1); i++ ){
@@ -349,12 +339,13 @@ public class ZX {
 
     public static void main(String[] args) {
         double a = 0.;
-        double epsilon = 1./512.;
+        double epsilon = 1./1.;
         int node = 5;
+        Derivative firstDerivative = new Derivative(node, x -> Math.cos(Math.PI * x) + Math.exp(x/(-epsilon)), x -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon, x -> Math.exp(-x/epsilon), x -> -Math.exp(-x/epsilon)/epsilon);
         for (int i=32;i<=1024;i=2*i){
 //            double b = findSecondUexp(i, epsilon);
-            Derivative firstDerivative = new Derivative (i, epsilon, node, x -> Math.cos(Math.PI * x) + Math.exp(x/(-epsilon)), x -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon), x -> Math.exp(-x/epsilon), x -> -Math.exp(-x/epsilon)/epsilon);
-            double b = firstDerivative.find();
+// Анастасия
+            double b = firstDerivative.find(i, epsilon);
             double four = a/b;
             a = b;
             System.out.println("epsilon = 1/"+1./epsilon);
