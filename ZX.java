@@ -1,15 +1,15 @@
-import java.util.function.BiFunction;
+import java.math.BigDecimal;
+import org.nd4j.linalg.util.BigDecimalMath;
+
 import java.util.function.Function;
 
 class Derivative {
     int node;
-    Function<Double, Double> function;
-    Function<Double, Double> phi;
-    Function<Double, Double> phiDerivative;
-    Function<Double, Double> accuracyDerivative;
-    BiFunction<Double, Double, Double> newMethodDerivative1;
-    Function<Double, Double> newMethodDerivative2;
-    public Derivative (int node, Function<Double, Double> function, Function<Double,Double> accuracyDerivative, Function<Double, Double> phi, Function<Double, Double> phiDerivative){
+    Function<BigDecimal, BigDecimal> function;
+    Function<BigDecimal, BigDecimal> phi;
+    Function<BigDecimal, BigDecimal> phiDerivative;
+    Function<BigDecimal, BigDecimal> accuracyDerivative;
+    public Derivative (int node, Function<BigDecimal, BigDecimal> function, Function<BigDecimal,BigDecimal> accuracyDerivative, Function<BigDecimal, BigDecimal> phi, Function<BigDecimal, BigDecimal> phiDerivative){
         this.node = node;
         this.function = function;
         this.accuracyDerivative = accuracyDerivative;
@@ -18,18 +18,19 @@ class Derivative {
     }
 
 
-    public double find (int N, double epsilon){
+    public BigDecimal find (int N, BigDecimal epsilon){
         int L = (node - 1) * (N - 1);
-        double[] u = new double[L+1];
-        double[] uAccuracyDerivative = new double[L+1];
-        double[] Phi = new double[L+1];
-        double[] PhiDerivative = new double[L+1];
-        double[] uDerivativeNewMethod = new double[L+1];
-        double h = 1./L;
-        double[] x = new double[L+1];
-        x[0] = 0.;
+        BigDecimal[] u = new BigDecimal[L+1];
+        BigDecimal[] uAccuracyDerivative = new BigDecimal[L+1];
+        BigDecimal[] Phi = new BigDecimal[L+1];
+        BigDecimal[] PhiDerivative = new BigDecimal[L+1];
+        BigDecimal[] uDerivativeNewMethod = new BigDecimal[L+1];
+        BigDecimal one = new BigDecimal(1.);
+        BigDecimal h = BigDecimal.valueOf(1/L);
+        BigDecimal[] x = new BigDecimal[L+1];
+        x[0] = BigDecimal.valueOf(0.);
         for (int j = 1;j<=L; j++){
-            x[j] = x[j-1] + h;
+            x[j] = x[j-1].add(h);
         }
 
         for (int i=0;i<=L;i++){
@@ -50,17 +51,19 @@ class Derivative {
 
         for (int i = 0; i < L/(node-1); i++ ){
             for (int j = i * (node-1); j <= (node-1) * (i+1); j++){
-                uDerivativeNewMethod[j] = (u[(2*i+1)*(node-1)/2]-u[i*(node-1)]) * PhiDerivative[j]/(Phi[(2*i+1)*(node-1)/2]-Phi[i*(node-1)]);
+                uDerivativeNewMethod[j] = (u[(2*i+1)*(node-1)/2].subtract(u[i*(node-1)])).multiply(PhiDerivative[j]).divide(Phi[(2*i+1)*(node-1)/2].subtract(Phi[i*(node-1)]));
+
+//                u[(BigDecimal.valueOf(2.*i).add(BigDecimal.valueOf(1.))).multiply(BigDecimal.valueOf(node-1.)).divide(BigDecimal.valueOf(2.))]
             }
         }
 
-        double[] norm = new double[L+1];
+        BigDecimal[] norm = new BigDecimal[L+1];
         for (int i=0;i<=L;i++){
-            norm[i] = epsilon*Math.abs(uDerivativeNewMethod[i] - uAccuracyDerivative[i]);
+            norm[i] = epsilon.multiply(uDerivativeNewMethod[i].subtract(uAccuracyDerivative[i])).abs();
         }
-        double maxNorm = 0.;
+        BigDecimal maxNorm = BigDecimal.valueOf(0.);
         for(int i=0;i<=L;i++){
-            if (maxNorm<norm[i]) maxNorm = norm[i];
+            if (norm[i].compareTo(maxNorm)>0) maxNorm = norm[i];
         }
         return maxNorm;
     }
@@ -331,14 +334,14 @@ public class ZX {
 
 
     public static void main(String[] args) {
-        double a = 0.;
-        double epsilon = 1./16.;
+        BigDecimal a = BigDecimal.valueOf(0.);
+        BigDecimal epsilon = BigDecimal.valueOf(1./512.);
         int node = 5;
-        Derivative firstDerivative = new Derivative(node, x -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), x -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon, x -> Math.exp(-x/epsilon), x -> -Math.exp(-x/epsilon)/epsilon);
+        Derivative firstDerivative = new Derivative(node, x -> Math.cos(x.multiply(BigDecimal.valueOf(Math.PI))) + Math.exp(-x/(epsilon)), x -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon, x -> Math.exp(-x/epsilon), x -> -Math.exp(-x/epsilon)/epsilon);
         for (int i=32;i<=1024;i=2*i){
 //            double b = findUexp(i, epsilon);
-            double b = firstDerivative.find(i, epsilon);
-            double four = a/b;
+            BigDecimal b = firstDerivative.find(i, epsilon);
+            BigDecimal four = a.divide(b);
             a = b;
             System.out.println("epsilon = 1/"+1./epsilon);
             System.out.println("Порядок точности log2 (||"+i/2.+"||/||"+i+"||) = "+Math.log10(four)/Math.log10(2.));
