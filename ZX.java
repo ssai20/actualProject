@@ -7,14 +7,17 @@ class findResidual {
     int node;
     Function<Double, Double> function;
     BiFunction<Double, Double, Double> classicDerivative;
-    BiFunction<Double, Double, Double> newMethodDerivative;
-    public findResidual (int N, double epsilon, int node, Function<Double, Double> function, BiFunction<Double, Double, Double> classicDerivative, BiFunction<Double, Double, Double> newMethodDerivative){
+    BiFunction<Double, Double, Double> newMethodDerivative1;
+    Function<Double, Double> newMethodDerivative2;
+    public findResidual (int N, double epsilon, int node, Function<Double, Double> function, BiFunction<Double,
+            Double, Double> classicDerivative, BiFunction<Double, Double, Double> newMethodDerivative1, Function<Double, Double> newMethodDerivative2){
         this.N = N;
         this.epsilon = epsilon;
         this.node = node;
         this.function = function;
         this.classicDerivative = classicDerivative;
-        this.newMethodDerivative = newMethodDerivative;
+        this.newMethodDerivative1 = newMethodDerivative1;
+        this.newMethodDerivative2 = newMethodDerivative2;
     }
     public double find (){
         int L = (node - 1) * (N - 1);
@@ -40,11 +43,14 @@ class findResidual {
             }
         }
 
-        for (int i = 0; i < (L+2)/node; i++ ){
-            for (int j = i * node; j < node * (i+1); j++){
-                uDerivativeNewMethod[j] = newMethodDerivative.apply(x[j], u[j]);
+        for (int i = 0; i < L/(node-1); i++ ){
+            for (int j = i * (node-1); j < (node-1) * (i+1); j++){
+                uDerivativeNewMethod[j] = newMethodDerivative1.apply(x[i], u[i]) * newMethodDerivative2.apply(x[j]);
+                //newMethodDerivative1 = (u[i*(node-1)]-2.*u[(2*i+1)*(node-1)/2.]+u[(i+1)*(node-1)]) - (Math.cos(x[i*(node-1)]*Math.PI) - 2.*Math.cos(x[[(2*i+1)*(node-1)/2.]]*Math.PI) + Math.cos(x[i+1)*(node-1)]*Math.PI))
+                //newMethodDerivative2 - -Math.exp(-x[j]/epsilon)/epsilon
             }
         }
+
 
         double maxNorm = 0.;
         return maxNorm;
