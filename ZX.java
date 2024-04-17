@@ -64,6 +64,7 @@ class Derivative {
 //                uDerivativeNewMethod[j] = newMethodDerivative1.apply(x[i], u[i]) * newMethodDerivative2.apply(x[j]);
                 //newMethodDerivative1 = (u[i*(node-1)]-2.*u[(2*i+1)*(node-1)/2.]+u[(i+1)*(node-1)]) - (Math.cos(x[i*(node-1)]*Math.PI) - 2.*Math.cos(x[[(2*i+1)*(node-1)/2.]]*Math.PI) + Math.cos(x[i+1)*(node-1)]*Math.PI))
                 //newMethodDerivative2 - -Math.exp(-x[j]/epsilon)/epsilon
+
             }
         }
 
