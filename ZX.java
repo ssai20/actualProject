@@ -1,6 +1,8 @@
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+
+
 class Derivative {
     int node;
     Function<Double, Double> function;
