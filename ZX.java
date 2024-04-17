@@ -11,6 +11,7 @@ class findResidual {
     Function<Double, Double> newMethodDerivative2;
     public findResidual (int N, double epsilon, int node, Function<Double, Double> function, BiFunction<Double,
             Double, Double> classicDerivative, BiFunction<Double, Double, Double> newMethodDerivative1, Function<Double, Double> newMethodDerivative2){
+
         this.N = N;
         this.epsilon = epsilon;
         this.node = node;
