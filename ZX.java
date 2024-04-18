@@ -154,7 +154,7 @@ class Derivative {
     }
 
     public void latexInitial (){
-        File file = new File("/home/funforces/Articles/NewArticleDerivative/T.tex");
+        File file = new File("/home/funforces/Articles/NewArticleDerivative/T3.tex");
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true),  "UTF-8"))){
             bw.write("\\begin{table} [!htb]");
             bw.newLine();
@@ -476,10 +476,57 @@ public class ZX {
         return maxNorm;
     }
 
+    public static void latexHead(){
+        File file = new File("/home/funforces/Articles/NewArticleDerivative/T3.tex");
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true),  "UTF-8"))){
 
+            bw.write("\\documentclass[14pt,a4paper]{extarticle}");
+            bw.newLine();
+            bw.write("\\usepackage{bm}");
+            bw.newLine();
+            bw.write("%\\usepackage[cp1251]{inputenc}    % Перешли на кодировку Windows!!!");
+            bw.newLine();
+            bw.write("\\usepackage[utf8]{inputenc}");
+            bw.newLine();
+            bw.write("\\usepackage[english, russian]{babel}    % Переносы через Babel (обязательно!)");
+            bw.newLine();
+            bw.write("\\usepackage{setspace,amsmath}");
+            bw.newLine();
+            bw.write("\\usepackage[left=15mm, top=20mm, right=15mm, bottom=30mm]{geometry} % настройки полей документа");
+            bw.newLine();
+            bw.write("\\usepackage{amssymb}");
+            bw.newLine();
+            bw.write("\\usepackage{longtable}%для работы с длинными таблицами");
+            bw.newLine();
+            bw.write("\\onehalfspacing");
+            bw.newLine();
+            bw.write("\\newcommand{\\eps}{\\varepsilon}");
+            bw.newLine();
+            bw.write("\\newcommand{\\Oh}[1] {{\\mathcal O} \\left(#1\\right)}");
+            bw.newLine();
+            bw.write("\\newcommand{\\specialcell}[2][c]{%");
+            bw.newLine();
+            bw.write("\\begin{tabular}[#1]{@{}c@{}}#2\\end{tabular}}");
+            bw.newLine();
+            bw.write("\\renewcommand{\baselinestretch}{1.2}");
+            bw.newLine();
+            bw.write("\\begin{document}");
+            bw.newLine();
+        } catch (IOException e1){
+            e1.printStackTrace();
+        }
+    }
 
-
-    public static void main(String[] args) throws IOException {
+    public static void latexEnd(){
+        File file = new File("/home/funforces/Articles/NewArticleDerivative/T3.tex");
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true),  "UTF-8"))){
+            bw.newLine();
+            bw.write("\\end{document}");
+        } catch (IOException e1){
+            e1.printStackTrace();
+        }
+    }
+    public static void main(String[] args) throws IOException, InterruptedException {
         OrderCode orderCode;
         int node = 5;
         ReentrantLock lock = new ReentrantLock();
@@ -491,8 +538,12 @@ public class ZX {
 
         DerivativeSearchThread firstDerivativeSearchThread = new DerivativeSearchThread(firstDerivative, lock);
         DerivativeSearchThread secondDerivativeSearchThread = new DerivativeSearchThread(secondDerivative, lock);
+
+        latexHead();
         firstDerivativeSearchThread.start();
-        secondDerivativeSearchThread.start();
+        firstDerivativeSearchThread.join();
+        latexEnd();
+//        secondDerivativeSearchThread.start();
 
     }
 }
