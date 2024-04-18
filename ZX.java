@@ -161,10 +161,13 @@ class Derivative {
 
     public void latexInitial (){
         File file = new File(fileLocation);
+        String title = "Погрешность улучшенной формулы для вычисления";
+        if (orderCode == OrderCode.FIRST){title = title.concat(" первой \\\\производной в "+ node + " точках");}
+        if (orderCode == OrderCode.SECOND){title = title.concat(" второй \\\\производной в "+ node + " точках");}
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true),  "UTF-8"))){
             bw.write("\\begin{table} [!htb]");
             bw.newLine();
-            bw.write("    \\caption { Погрешность классической формулы для вычисления второй производной в 5 точках}");
+            bw.write("    \\caption {" + title +"}");
             bw.newLine();
             bw.write("        \\begin{center}");
             bw.newLine();
@@ -577,9 +580,9 @@ public class ZX {
         process2.destroy();
     }
     public static void main(String[] args) throws IOException, InterruptedException {
-        String fileLocation = "/home/funforces/Articles/NewArticleDerivative/T18.tex";
+        String fileLocation = "/home/funforces/Articles/NewArticleDerivative/T24.tex";
         OrderCode orderCode = null;
-        int node = 9;
+        int node = 5;
         ReentrantLock lock = new ReentrantLock();
         Derivative firstDerivative = new Derivative(fileLocation, orderCode.FIRST, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.sin(Math.PI * x) - Math.exp(-x / epsilon) / epsilon,
                 (x, epsilon) -> Math.exp(-x / epsilon), (x, epsilon) -> -Math.exp(-x / epsilon) / epsilon);
