@@ -562,10 +562,24 @@ public class ZX {
             e1.printStackTrace();
         }
     }
+
+    public static void compileAndOpenPDFFile (String fileLocation) throws IOException {
+        String pdfFile = fileLocation.replace("tex","pdf");
+        String[] command = {"pdflatex", "--output-directory=/home/funforces/Articles/NewArticleDerivative/", fileLocation};
+        Process process = Runtime.getRuntime().exec(command);
+        process.getInputStream().transferTo(System.out);
+        process.getErrorStream().transferTo(System.out);
+        process.destroy();
+        String[] command2 = {"open", pdfFile};
+        Process process2 = Runtime.getRuntime().exec(command2);
+        process2.getInputStream().transferTo(System.out);
+        process2.getErrorStream().transferTo(System.out);
+        process2.destroy();
+    }
     public static void main(String[] args) throws IOException, InterruptedException {
-        String fileLocation = "/home/funforces/Articles/NewArticleDerivative/T8.tex";
+        String fileLocation = "/home/funforces/Articles/NewArticleDerivative/T18.tex";
         OrderCode orderCode = null;
-        int node = 5;
+        int node = 9;
         ReentrantLock lock = new ReentrantLock();
         Derivative firstDerivative = new Derivative(fileLocation, orderCode.FIRST, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.sin(Math.PI * x) - Math.exp(-x / epsilon) / epsilon,
                 (x, epsilon) -> Math.exp(-x / epsilon), (x, epsilon) -> -Math.exp(-x / epsilon) / epsilon);
@@ -583,16 +597,27 @@ public class ZX {
             firstDerivativeSearchThread.join();
             secondDerivativeSearchThread.join();
             ZX.latexEndDocument(fileLocation);
+            compileAndOpenPDFFile(fileLocation);
         } catch (Exception e) {
             System.out.println("Exception");
         }
 
-        String[] command = {"gedit", fileLocation};
-        Process process = Runtime.getRuntime().exec(command);
-        process.getInputStream().transferTo(System.out);
-        process.getErrorStream().transferTo(System.out);
-        process.destroy();
+//        String[] command = {"pdflatex", "--output-directory=/home/funforces/Articles/NewArticleDerivative/", fileLocation};
+//        Process process = Runtime.getRuntime().exec(command);
+//        process.getInputStream().transferTo(System.out);
+//        process.getErrorStream().transferTo(System.out);
+//        process.destroy();
+//        String[] command2 = {"open", "/home/funforces/Articles/NewArticleDerivative/T14.pdf"};
+//        Process process2 = Runtime.getRuntime().exec(command2);
+//        process2.getInputStream().transferTo(System.out);
+//        process2.getErrorStream().transferTo(System.out);
+//        process2.destroy();
 
+//        pdflatex --output-directory=/home/funforces/Articles/NewArticleDerivative/ /home/funforces/Articles/NewArticleDerivative/T5.tex | open /home/funforces/Articles/NewArticleDerivative/T5.pdf
+//
+//        pdflatex --output-directory=/home/funforces/Articles/NewArticleDerivative/ /home/funforces/Articles/NewArticleDerivative/T9.tex
+//
+//        open /home/funforces/Articles/NewArticleDerivative/T9.pdf
 
 
     }
