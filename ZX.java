@@ -5,13 +5,11 @@ import java.util.function.Function;
 
 class Derivative {
     int node;
-    Function<Double, Double> function;
-    Function<Double, Double> phi;
-    Function<Double, Double> phiDerivative;
-    Function<Double, Double> accuracyDerivative;
-    BiFunction<Double, Double, Double> newMethodDerivative1;
-    Function<Double, Double> newMethodDerivative2;
-    public Derivative (int node, Function<Double, Double> function, Function<Double,Double> accuracyDerivative, Function<Double, Double> phi, Function<Double, Double> phiDerivative){
+    BiFunction<Double, Double, Double> function;
+    BiFunction<Double, Double, Double> phi;
+    BiFunction<Double, Double, Double> phiDerivative;
+    BiFunction<Double, Double, Double> accuracyDerivative;
+    public Derivative (int node, BiFunction<Double, Double, Double> function, BiFunction<Double, Double, Double> accuracyDerivative, BiFunction<Double, Double, Double> phi, BiFunction<Double, Double, Double> phiDerivative){
         this.node = node;
         this.function = function;
         this.accuracyDerivative = accuracyDerivative;
@@ -35,19 +33,19 @@ class Derivative {
         }
 
         for (int i=0;i<=L;i++){
-            u[i] = function.apply(x[i]);
+            u[i] = function.apply(x[i], epsilon);
         }
         for (int i=0;i<=L;i++) {
-            uAccuracyDerivative[i] = accuracyDerivative.apply(x[i]);
+            uAccuracyDerivative[i] = accuracyDerivative.apply(x[i], epsilon);
         }
         for (int i=0;i<=L;i++) {
-            Phi[i] = phi.apply(x[i]);
+            Phi[i] = phi.apply(x[i], epsilon);
         }
         for (int i=0;i<=L;i++) {
-            PhiDerivative[i] = phiDerivative.apply(x[i]);
+            PhiDerivative[i] = phiDerivative.apply(x[i], epsilon);
         }
         for (int i=0;i<=L;i++) {
-            uAccuracyDerivative[i] = accuracyDerivative.apply(x[i]);
+            uAccuracyDerivative[i] = accuracyDerivative.apply(x[i], epsilon);
         }
 
         for (int i = 0; i < L/(node-1); i++ ){
@@ -67,8 +65,84 @@ class Derivative {
         return maxNorm;
     }
 
+    public void latexTable(){
+        String residual[][] = new String[7][6];
+        String oac[][] = new String[7][6];
+//        double a = 0.;
+        //double epsilon = 1./1.;
+//        int node = 5;
+//        Derivative firstDerivative = new Derivative(node, x -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), x -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon, x -> Math.exp(-x/epsilon), x -> -Math.exp(-x/epsilon)/epsilon);
+        latexInitial();
+        int kRes=0;
+        int kOa=0;
+        for (int eps = 8;eps<=512;eps=eps*2) {
+            if (eps==8.) eps = 1;
+            double a = 0.;
+            double epsilon = 1./eps;
+//            Derivative firstDerivative = new Derivative(node, x -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), x -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon, x -> Math.exp(-x/epsilon), x -> -Math.exp(-x/epsilon)/epsilon);
+            int lRes=0;
+            int lOa=0;
+            for (int i = 32; i <= 1024; i = 2 * i) {
+                //            double b = findUexp(i, epsilon);
+//                Derivative firstDerivative = new Derivative(node, x -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), x -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon, x -> Math.exp(-x/epsilon), x -> -Math.exp(-x/epsilon)/epsilon);
+                double b = find(i, epsilon);
+//                java.text.NumberFormat formatter = new java.text.DecimalFormat("0.##E0");
+//                String formattedDouble = formatter.format(b).replace(",", ".").replace("E", "e");
+                String formattedDouble = String.format("%6.2e", b).replace(",", ".");
+                double four = a / b;
+                double oa = Math.log10(four) / Math.log10(2.);
+                java.text.NumberFormat formatterOa = new java.text.DecimalFormat("0.#");
+                String formattedDoubleOa = formatterOa.format(oa).replace(",", ".").replace("E", "e");
+                a = b;
+                residual[kRes][lRes] = formattedDouble;
+                lRes++;
+                oac[kOa][lOa] = formattedDoubleOa;
+                lOa++;
+//                System.out.println("epsilon = 1/" + 1. / epsilon);
+//                System.out.println("Порядок точности log2 (||" + i / 2. + "||/||" + i + "||) = ".concat(formattedDoubleOa));
+//                System.out.println("_______________________________________________________________");
+//                System.out.println("||" + i + "|| = ".concat(formattedDouble));
+            }
+            kRes++;
+            kOa++;
+            if (eps==1.) eps = 8;
+        }
+        latexTable(residual, oac);
+        latexEnd();
+    }
+
+    public static void latexInitial(){
+        System.out.println("\\begin{table} [!htb]");
+        System.out.println("    \\caption { Погрешность классической формулы для вычисления второй производной в 5 точках}");
+        System.out.println("        \\begin{center}");
+        System.out.println("\\begin{tabular}{c|c|c|c|c|c|c}");
+        System.out.println("\\hline $\\varepsilon$ & \\multicolumn{6}{c}{$N$} \\\\");
+        System.out.println("\\cline{2-7}& $32$&$64$& $128$&$256$&$512$&$1024$ \\\\");
+    }
+    public static void latexTable(String[][] residual, String[][] oa){
+        System.out.println("\\hline $1$&$".concat(residual[0][0])+"$&$".concat(residual[0][1])+"$&$".concat(residual[0][2])+"$&$".concat(residual[0][3])+"$& $".concat(residual[0][4])+"$& $".concat(residual[0][5])+"$\\\\");
+        System.out.println("$o.a.$ &".concat(oa[0][1])+"&".concat(oa[0][2])+"& ".concat(oa[0][3])+"&".concat(oa[0][4])+"&".concat(oa[0][5])+"&\\\\");
+        System.out.println("$16^{-1}$&$".concat(residual[1][0])+"$&$".concat(residual[1][1])+"$&$".concat(residual[1][2])+"$&$".concat(residual[1][3])+"$&$".concat(residual[1][4])+"$& $".concat(residual[1][5])+"$\\\\");
+        System.out.println("$o.a.$&".concat(oa[1][1])+"&".concat(oa[1][2])+"&".concat(oa[0][3])+"&".concat(oa[0][4])+"&".concat(oa[0][5])+"&\\\\");
+        System.out.println("$32^{-1}$&$".concat(residual[2][0])+"$&$".concat(residual[2][1])+"$&$".concat(residual[2][2])+"$&$".concat(residual[2][3])+"$&$".concat(residual[2][4])+"$& $".concat(residual[2][5])+"$\\\\");
+        System.out.println("$o.a.$&".concat(oa[2][1])+"&".concat(oa[2][2])+"&".concat(oa[2][3])+"&".concat(oa[2][4])+"&".concat(oa[2][5])+"&\\\\");
+        System.out.println("$64^{-1}$&$".concat(residual[3][0])+"$&$".concat(residual[3][1])+"$&$".concat(residual[3][2])+"$&$".concat(residual[3][3])+"$&$".concat(residual[3][4])+"$& $".concat(residual[3][5])+"$\\\\");
+        System.out.println("$o.a.$&".concat(oa[3][1])+"&".concat(oa[3][2])+"&".concat(oa[3][3])+"&".concat(oa[3][4])+"&".concat(oa[3][5])+"&\\\\");
+        System.out.println("$128^{-1}$&$".concat(residual[4][0])+"$&$".concat(residual[4][1])+"$&$".concat(residual[4][2])+"$&$".concat(residual[4][3])+"$&$".concat(residual[4][4])+"$ & $".concat(residual[4][5])+"$\\\\");
+        System.out.println("$o.a.$&".concat(oa[4][1])+"&".concat(oa[4][2])+"&".concat(oa[4][3])+"&".concat(oa[4][4])+"&".concat(oa[4][5])+"&  \\\\");
+        System.out.println("$256^{-1}$&$".concat(residual[5][0])+"$&$".concat(residual[5][1])+"$&$".concat(residual[5][2])+"$&$".concat(residual[5][3])+"$&$".concat(residual[5][4])+"$& $".concat(residual[5][5])+"$\\\\");
+        System.out.println("$o.a.$&".concat(oa[5][1])+"&".concat(oa[5][2])+"&".concat(oa[5][3])+"&".concat(oa[5][4])+"&".concat(oa[5][5])+"&\\\\");
+        System.out.println("$512^{-1}$&$".concat(residual[6][0])+"$&$".concat(residual[6][1])+"$&$".concat(residual[6][2])+"$&$".concat(residual[6][3])+"$&$".concat(residual[6][4])+"$& $".concat(residual[6][5])+"$\\\\");
+        System.out.println("$o.a.$&".concat(oa[6][1])+"&".concat(oa[6][2])+"&".concat(oa[6][3])+"&".concat(oa[6][4])+"&".concat(oa[6][5])+"&\\\\");
 
 
+    }
+    public static void latexEnd(){
+        System.out.println("\\hline");
+        System.out.println("        \\end{tabular}");
+        System.out.println("    \\end{center}");
+        System.out.println("\\end{table}");
+    }
 
 }
 public class ZX {
@@ -139,12 +213,6 @@ public class ZX {
         for(int i=0;i<=L;i++){
             if (maxNorm<norm[i]) maxNorm = norm[i];
         }
-        java.text.NumberFormat formatter = new java.text.DecimalFormat("0.##E0");
-        String formattedDouble = formatter.format(maxNorm).replace(",", ".").replace("E", "e");
-//            String formattedDouble = String.format("%6.2e", b).replace(",", ".");
-
-
-
         return maxNorm;
     }
 
@@ -345,82 +413,13 @@ public class ZX {
         return maxNorm;
     }
 
-    public static void latexInitial(){
-        System.out.println("\\begin{table} [!htb]");
-        System.out.println("\\caption { Погрешность классической формулы для вычисления второй производной в 5 точках}");
-        System.out.println("\\begin{center}");
-        System.out.println("\\begin{tabular}{c|c|c|c|c|c|c}");
-        System.out.println("\\hline $\\varepsilon$ & \\multicolumn{6}{c}{$N$} \\\\");
-        System.out.println("\\cline{2-7}& $32$&$64$& $128$&$256$&$512$&$1024$ \\\\");
-    }
-    public static void latexTable(String[][] residual, String[][] oa){
-        System.out.println("\\hline $1$&$".concat(residual[0][0])+"$&$".concat(residual[0][1])+"$&$".concat(residual[0][2])+"$&$".concat(residual[0][3])+"$& $".concat(residual[0][4])+"$& $".concat(residual[0][5])+"$\\\\");
-        System.out.println("$o.a.$ &".concat(oa[0][1])+"&".concat(oa[0][2])+"& ".concat(oa[0][3])+"&".concat(oa[0][4])+"&".concat(oa[0][5])+"&\\\\");
-        System.out.println("$16^{-1}$&$".concat(residual[1][0])+"$&$".concat(residual[1][1])+"$&$".concat(residual[1][2])+"$&$".concat(residual[1][3])+"$&$".concat(residual[1][4])+"$& $".concat(residual[1][5])+"$\\\\");
-        System.out.println("$o.a.$&".concat(oa[1][1])+"&".concat(oa[1][2])+"&".concat(oa[0][3])+"&".concat(oa[0][4])+"&".concat(oa[0][5])+"&\\\\");
-        System.out.println("$32^{-1}$&$".concat(residual[2][0])+"$&$".concat(residual[2][1])+"$&$".concat(residual[2][2])+"$&$".concat(residual[2][3])+"$&$".concat(residual[2][4])+"$& $".concat(residual[2][5])+"$\\\\");
-        System.out.println("$o.a.$&".concat(oa[2][1])+"&".concat(oa[2][2])+"&".concat(oa[2][3])+"&".concat(oa[2][4])+"&".concat(oa[2][5])+"&\\\\");
-        System.out.println("$64^{-1}$&$".concat(residual[3][0])+"$&$".concat(residual[3][1])+"$&$".concat(residual[3][2])+"$&$".concat(residual[3][3])+"$&$".concat(residual[3][4])+"$& $".concat(residual[3][5])+"$\\\\");
-        System.out.println("$o.a.$&".concat(oa[3][1])+"&".concat(oa[3][2])+"&".concat(oa[3][3])+"&".concat(oa[3][4])+"&".concat(oa[3][5])+"&\\\\");
-        System.out.println("$128^{-1}$&$".concat(residual[4][0])+"$&$".concat(residual[4][1])+"$&$".concat(residual[4][2])+"$&$".concat(residual[4][3])+"$&$".concat(residual[4][4])+"$ & $".concat(residual[4][5])+"$\\\\");
-        System.out.println("$o.a.$&".concat(oa[4][1])+"&".concat(oa[4][2])+"&".concat(oa[4][3])+"&".concat(oa[4][4])+"&".concat(oa[4][5])+"&  \\\\");
-        System.out.println("$256^{-1}$&$".concat(residual[5][0])+"$&$".concat(residual[5][1])+"$&$".concat(residual[5][2])+"$&$".concat(residual[5][3])+"$&$".concat(residual[5][4])+"$& $".concat(residual[5][5])+"$\\\\");
-        System.out.println("$o.a.$&".concat(oa[5][1])+"&".concat(oa[5][2])+"&".concat(oa[5][3])+"&".concat(oa[5][4])+"&".concat(oa[5][5])+"&\\\\");
-        System.out.println("$512^{-1}$&$".concat(residual[6][0])+"$&$".concat(residual[6][1])+"$&$".concat(residual[6][2])+"$&$".concat(residual[6][3])+"$&$".concat(residual[6][4])+"$& $".concat(residual[6][5])+"$\\\\");
-        System.out.println("$o.a.$&".concat(oa[6][1])+"&".concat(oa[6][2])+"&".concat(oa[6][3])+"&".concat(oa[6][4])+"&".concat(oa[6][5])+"&\\\\");
 
 
-    }
-    public static void latexEnd(){
-        System.out.println("\\hline");
-        System.out.println("        \\end{tabular}");
-        System.out.println("    \\end{center}");
-        System.out.println("\\end{table}");
-    }
 
     public static void main(String[] args) {
-        String residual[][] = new String[7][6];
-        String oac[][] = new String[7][6];
-//        double a = 0.;
-        //double epsilon = 1./1.;
         int node = 5;
-//        Derivative firstDerivative = new Derivative(node, x -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), x -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon, x -> Math.exp(-x/epsilon), x -> -Math.exp(-x/epsilon)/epsilon);
-        latexInitial();
-        int kRes=0;
-        int kOa=0;
-        for (int eps = 8;eps<=512;eps=eps*2) {
-            if (eps==8.) eps = 1;
-            double a = 0.;
-            double epsilon = 1./eps;
-//            Derivative firstDerivative = new Derivative(node, x -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), x -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon, x -> Math.exp(-x/epsilon), x -> -Math.exp(-x/epsilon)/epsilon);
-            int lRes=0;
-            int lOa=0;
-            for (int i = 32; i <= 1024; i = 2 * i) {
-                //            double b = findUexp(i, epsilon);
-                Derivative firstDerivative = new Derivative(node, x -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), x -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon, x -> Math.exp(-x/epsilon), x -> -Math.exp(-x/epsilon)/epsilon);
-                double b = firstDerivative.find(i, epsilon);
-//                java.text.NumberFormat formatter = new java.text.DecimalFormat("0.##E0");
-//                String formattedDouble = formatter.format(b).replace(",", ".").replace("E", "e");
-                            String formattedDouble = String.format("%6.2e", b).replace(",", ".");
-                double four = a / b;
-                double oa = Math.log10(four) / Math.log10(2.);
-                java.text.NumberFormat formatterOa = new java.text.DecimalFormat("0.#");
-                String formattedDoubleOa = formatterOa.format(oa).replace(",", ".").replace("E", "e");
-                a = b;
-                residual[kRes][lRes] = formattedDouble;
-                lRes++;
-                oac[kOa][lOa] = formattedDoubleOa;
-                lOa++;
-//                System.out.println("epsilon = 1/" + 1. / epsilon);
-//                System.out.println("Порядок точности log2 (||" + i / 2. + "||/||" + i + "||) = ".concat(formattedDoubleOa));
-//                System.out.println("_______________________________________________________________");
-//                System.out.println("||" + i + "|| = ".concat(formattedDouble));
-            }
-            kRes++;
-            kOa++;
-            if (eps==1.) eps = 8;
-        }
-        latexTable(residual, oac);
-        latexEnd();
+        Derivative firstDerivative = new Derivative(node, (x,epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), (x, epsilon) -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon,
+                (x, epsilon) -> Math.exp(-x/epsilon), (x, epsilon) -> -Math.exp(-x/epsilon)/epsilon);
+        firstDerivative.latexTable();
     }
 }
