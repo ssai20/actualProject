@@ -80,7 +80,7 @@ class Derivative {
         if (order == 2) {
             for (int i = 0; i < L / (node - 1); i++) {
                 for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
-                    uDerivativeNewMethod[j] = (u[(i) * (node - 1)] - 2.*u[(2 * i + 1) * (node - 1) / 2] + u[(i+1) * (node - 1)]) * PhiDerivative[j] / (u[(i) * (node - 1)] - 2.*Phi[(2 * i + 1) * (node - 1) / 2] + Phi[(i+1) * (node - 1)]) ;
+                    uDerivativeNewMethod[j] = (u[(i) * (node - 1)] - 2.*u[(2 * i + 1) * (node - 1) / 2] + u[(i+1) * (node - 1)]) * PhiDerivative[j] / (Phi[(i) * (node - 1)] - 2.*Phi[(2 * i + 1) * (node - 1) / 2] + Phi[(i+1) * (node - 1)]) ;
                 }
             }
         }
