@@ -1,20 +1,42 @@
+import java.io.IOException;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
+class DerivativeSearchThread extends Thread{
+    ReentrantLock lock;
+    Derivative derivative;
 
+    public DerivativeSearchThread(Derivative derivative, ReentrantLock lock) {
+        this.lock = lock;
+        this.derivative = derivative;
+    }
+
+    @Override
+    public void run() {
+        try {
+            lock.lock();
+            derivative.latexTable();
+        } finally {
+            lock.unlock();
+        }
+    }
+}
 
 class Derivative {
+    int order;
     int node;
     BiFunction<Double, Double, Double> function;
     BiFunction<Double, Double, Double> phi;
     BiFunction<Double, Double, Double> phiDerivative;
     BiFunction<Double, Double, Double> accuracyDerivative;
-    public Derivative (int node, BiFunction<Double, Double, Double> function, BiFunction<Double, Double, Double> accuracyDerivative, BiFunction<Double, Double, Double> phi, BiFunction<Double, Double, Double> phiDerivative){
+    public Derivative (){}
+    public Derivative (int order, int node, BiFunction<Double, Double, Double> function, BiFunction<Double, Double, Double> accuracyDerivative, BiFunction<Double, Double, Double> phi, BiFunction<Double, Double, Double> phiDerivative){
         this.node = node;
         this.function = function;
         this.accuracyDerivative = accuracyDerivative;
         this.phi = phi;
         this.phiDerivative = phiDerivative;
+        this.order = order;
     }
 
 
@@ -48,15 +70,31 @@ class Derivative {
             uAccuracyDerivative[i] = accuracyDerivative.apply(x[i], epsilon);
         }
 
-        for (int i = 0; i < L/(node-1); i++ ){
-            for (int j = i * (node-1); j <= (node-1) * (i+1); j++){
-                uDerivativeNewMethod[j] = (u[(2*i+1)*(node-1)/2]-u[i*(node-1)]) * PhiDerivative[j]/(Phi[(2*i+1)*(node-1)/2]-Phi[i*(node-1)]);
+        if (order == 1) {
+            for (int i = 0; i < L / (node - 1); i++) {
+                for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
+                    uDerivativeNewMethod[j] = (u[(2 * i + 1) * (node - 1) / 2] - u[i * (node - 1)]) * PhiDerivative[j] / (Phi[(2 * i + 1) * (node - 1) / 2] - Phi[i * (node - 1)]);
+                }
+            }
+        }
+        if (order == 2) {
+            for (int i = 0; i < L / (node - 1); i++) {
+                for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
+                    uDerivativeNewMethod[j] = (u[(i) * (node - 1)] - 2.*u[(2 * i + 1) * (node - 1) / 2] + u[(i+1) * (node - 1)]) * PhiDerivative[j] / (u[(i) * (node - 1)] - 2.*Phi[(2 * i + 1) * (node - 1) / 2] + Phi[(i+1) * (node - 1)]) ;
+                }
             }
         }
 
         double[] norm = new double[L+1];
-        for (int i=0;i<=L;i++){
-            norm[i] = epsilon*Math.abs(uDerivativeNewMethod[i] - uAccuracyDerivative[i]);
+        if (order == 1) {
+            for (int i = 0; i <= L; i++) {
+                norm[i] = epsilon * Math.abs(uDerivativeNewMethod[i] - uAccuracyDerivative[i]);
+            }
+        }
+        if (order == 2) {
+            for (int i = 0; i <= L; i++) {
+                norm[i] = epsilon*epsilon * Math.abs(uDerivativeNewMethod[i] - uAccuracyDerivative[i]);
+            }
         }
         double maxNorm = 0.;
         for(int i=0;i<=L;i++){
@@ -416,10 +454,19 @@ public class ZX {
 
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         int node = 5;
-        Derivative firstDerivative = new Derivative(node, (x,epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), (x, epsilon) -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon,
+        ReentrantLock lock = new ReentrantLock();
+        Derivative firstDerivative = new Derivative(1,node, (x,epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), (x, epsilon) -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon,
                 (x, epsilon) -> Math.exp(-x/epsilon), (x, epsilon) -> -Math.exp(-x/epsilon)/epsilon);
-        firstDerivative.latexTable();
+
+        Derivative secondDerivative = new Derivative(2,node, (x,epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), (x,epsilon) -> -Math.PI*Math.PI*Math.cos(Math.PI * x) + Math.exp(-x/(epsilon))/(epsilon*epsilon),
+                (x, epsilon) -> Math.exp(-x/epsilon), (x, epsilon) -> Math.exp(-x/epsilon)/(epsilon*epsilon));
+
+        DerivativeSearchThread firstDerivativeSearchThread = new DerivativeSearchThread(firstDerivative, lock);
+        DerivativeSearchThread secondDerivativeSearchThread = new DerivativeSearchThread(secondDerivative, lock);
+        firstDerivativeSearchThread.start();
+        secondDerivativeSearchThread.start();
+
     }
 }
