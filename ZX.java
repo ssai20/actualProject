@@ -1,7 +1,11 @@
-import java.io.IOException;
+import java.io.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 
+enum OrderCode {
+    FIRST,
+    SECOND
+}
 class DerivativeSearchThread extends Thread{
     ReentrantLock lock;
     Derivative derivative;
@@ -23,20 +27,20 @@ class DerivativeSearchThread extends Thread{
 }
 
 class Derivative {
-    int order;
+    OrderCode orderCode;
     int node;
     BiFunction<Double, Double, Double> function;
     BiFunction<Double, Double, Double> phi;
     BiFunction<Double, Double, Double> phiDerivative;
     BiFunction<Double, Double, Double> accuracyDerivative;
     public Derivative (){}
-    public Derivative (int order, int node, BiFunction<Double, Double, Double> function, BiFunction<Double, Double, Double> accuracyDerivative, BiFunction<Double, Double, Double> phi, BiFunction<Double, Double, Double> phiDerivative){
+    public Derivative (OrderCode orderCode, int node, BiFunction<Double, Double, Double> function, BiFunction<Double, Double, Double> accuracyDerivative, BiFunction<Double, Double, Double> phi, BiFunction<Double, Double, Double> phiDerivative){
         this.node = node;
         this.function = function;
         this.accuracyDerivative = accuracyDerivative;
         this.phi = phi;
         this.phiDerivative = phiDerivative;
-        this.order = order;
+        this.orderCode = orderCode;
     }
 
 
@@ -70,14 +74,14 @@ class Derivative {
             uAccuracyDerivative[i] = accuracyDerivative.apply(x[i], epsilon);
         }
 
-        if (order == 1) {
+        if (orderCode.compareTo(OrderCode.FIRST)==0) {
             for (int i = 0; i < L / (node - 1); i++) {
                 for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
                     uDerivativeNewMethod[j] = (u[(2 * i + 1) * (node - 1) / 2] - u[i * (node - 1)]) * PhiDerivative[j] / (Phi[(2 * i + 1) * (node - 1) / 2] - Phi[i * (node - 1)]);
                 }
             }
         }
-        if (order == 2) {
+        if (orderCode.compareTo(OrderCode.SECOND)==0) {
             for (int i = 0; i < L / (node - 1); i++) {
                 for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
                     uDerivativeNewMethod[j] = (u[(i) * (node - 1)] - 2.*u[(2 * i + 1) * (node - 1) / 2] + u[(i+1) * (node - 1)]) * PhiDerivative[j] / (Phi[(i) * (node - 1)] - 2.*Phi[(2 * i + 1) * (node - 1) / 2] + Phi[(i+1) * (node - 1)]) ;
@@ -86,12 +90,12 @@ class Derivative {
         }
 
         double[] norm = new double[L+1];
-        if (order == 1) {
+        if (orderCode.compareTo(OrderCode.FIRST)==0) {
             for (int i = 0; i <= L; i++) {
                 norm[i] = epsilon * Math.abs(uDerivativeNewMethod[i] - uAccuracyDerivative[i]);
             }
         }
-        if (order == 2) {
+        if (orderCode.compareTo(OrderCode.SECOND)==0) {
             for (int i = 0; i <= L; i++) {
                 norm[i] = epsilon*epsilon * Math.abs(uDerivativeNewMethod[i] - uAccuracyDerivative[i]);
             }
@@ -149,7 +153,28 @@ class Derivative {
         latexEnd();
     }
 
-    public static void latexInitial(){
+    public void latexInitial (){
+        File file = new File("/home/funforces/Articles/NewArticleDerivative/T.tex");
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true),  "UTF-8"))){
+            bw.write("\\begin{table} [!htb]");
+            bw.newLine();
+            bw.write("    \\caption { Погрешность классической формулы для вычисления второй производной в 5 точках}");
+            bw.newLine();
+            bw.write("        \\begin{center}");
+            bw.newLine();
+            bw.write("\\begin{tabular}{c|c|c|c|c|c|c}");
+            bw.newLine();
+            bw.write("\\hline $\\varepsilon$ & \\multicolumn{6}{c}{$N$} \\\\");
+            bw.newLine();
+            bw.write("\\cline{2-7}& $32$&$64$& $128$&$256$&$512$&$1024$ \\\\");
+            bw.newLine();
+        } catch (IOException e1){
+            e1.printStackTrace();
+        }
+//        System.out.println("Данные отправлены в файл: "+fileOutPath);
+    }
+
+    public static void AlatexInitial(){
         System.out.println("\\begin{table} [!htb]");
         System.out.println("    \\caption { Погрешность классической формулы для вычисления второй производной в 5 точках}");
         System.out.println("        \\begin{center}");
@@ -455,12 +480,13 @@ public class ZX {
 
 
     public static void main(String[] args) throws IOException {
+        OrderCode orderCode;
         int node = 5;
         ReentrantLock lock = new ReentrantLock();
-        Derivative firstDerivative = new Derivative(1,node, (x,epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), (x, epsilon) -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon,
+        Derivative firstDerivative = new Derivative(OrderCode.FIRST,node, (x,epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), (x, epsilon) -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon,
                 (x, epsilon) -> Math.exp(-x/epsilon), (x, epsilon) -> -Math.exp(-x/epsilon)/epsilon);
 
-        Derivative secondDerivative = new Derivative(2,node, (x,epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), (x,epsilon) -> -Math.PI*Math.PI*Math.cos(Math.PI * x) + Math.exp(-x/(epsilon))/(epsilon*epsilon),
+        Derivative secondDerivative = new Derivative(OrderCode.SECOND,node, (x,epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), (x,epsilon) -> -Math.PI*Math.PI*Math.cos(Math.PI * x) + Math.exp(-x/(epsilon))/(epsilon*epsilon),
                 (x, epsilon) -> Math.exp(-x/epsilon), (x, epsilon) -> Math.exp(-x/epsilon)/(epsilon*epsilon));
 
         DerivativeSearchThread firstDerivativeSearchThread = new DerivativeSearchThread(firstDerivative, lock);
