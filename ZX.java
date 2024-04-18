@@ -20,6 +20,10 @@ class DerivativeSearchThread extends Thread{
         try {
             lock.lock();
             derivative.latexTable();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
         } finally {
             lock.unlock();
         }
@@ -27,6 +31,7 @@ class DerivativeSearchThread extends Thread{
 }
 
 class Derivative {
+    String fileLocation;
     OrderCode orderCode;
     int node;
     BiFunction<Double, Double, Double> function;
@@ -34,13 +39,14 @@ class Derivative {
     BiFunction<Double, Double, Double> phiDerivative;
     BiFunction<Double, Double, Double> accuracyDerivative;
     public Derivative (){}
-    public Derivative (OrderCode orderCode, int node, BiFunction<Double, Double, Double> function, BiFunction<Double, Double, Double> accuracyDerivative, BiFunction<Double, Double, Double> phi, BiFunction<Double, Double, Double> phiDerivative){
+    public Derivative (String fileLocation, OrderCode orderCode, int node, BiFunction<Double, Double, Double> function, BiFunction<Double, Double, Double> accuracyDerivative, BiFunction<Double, Double, Double> phi, BiFunction<Double, Double, Double> phiDerivative){
         this.node = node;
         this.function = function;
         this.accuracyDerivative = accuracyDerivative;
         this.phi = phi;
         this.phiDerivative = phiDerivative;
         this.orderCode = orderCode;
+        this.fileLocation = fileLocation;
     }
 
 
@@ -107,7 +113,7 @@ class Derivative {
         return maxNorm;
     }
 
-    public void latexTable(){
+    public void latexTable() throws FileNotFoundException, UnsupportedEncodingException {
         String residual[][] = new String[7][6];
         String oac[][] = new String[7][6];
 //        double a = 0.;
@@ -154,7 +160,7 @@ class Derivative {
     }
 
     public void latexInitial (){
-        File file = new File("/home/funforces/Articles/NewArticleDerivative/T3.tex");
+        File file = new File(fileLocation);
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true),  "UTF-8"))){
             bw.write("\\begin{table} [!htb]");
             bw.newLine();
@@ -182,35 +188,65 @@ class Derivative {
         System.out.println("\\hline $\\varepsilon$ & \\multicolumn{6}{c}{$N$} \\\\");
         System.out.println("\\cline{2-7}& $32$&$64$& $128$&$256$&$512$&$1024$ \\\\");
     }
-    public static void latexTable(String[][] residual, String[][] oa){
-        System.out.println("\\hline $1$&$".concat(residual[0][0])+"$&$".concat(residual[0][1])+"$&$".concat(residual[0][2])+"$&$".concat(residual[0][3])+"$& $".concat(residual[0][4])+"$& $".concat(residual[0][5])+"$\\\\");
-        System.out.println("$o.a.$ &".concat(oa[0][1])+"&".concat(oa[0][2])+"& ".concat(oa[0][3])+"&".concat(oa[0][4])+"&".concat(oa[0][5])+"&\\\\");
-        System.out.println("$16^{-1}$&$".concat(residual[1][0])+"$&$".concat(residual[1][1])+"$&$".concat(residual[1][2])+"$&$".concat(residual[1][3])+"$&$".concat(residual[1][4])+"$& $".concat(residual[1][5])+"$\\\\");
-        System.out.println("$o.a.$&".concat(oa[1][1])+"&".concat(oa[1][2])+"&".concat(oa[0][3])+"&".concat(oa[0][4])+"&".concat(oa[0][5])+"&\\\\");
-        System.out.println("$32^{-1}$&$".concat(residual[2][0])+"$&$".concat(residual[2][1])+"$&$".concat(residual[2][2])+"$&$".concat(residual[2][3])+"$&$".concat(residual[2][4])+"$& $".concat(residual[2][5])+"$\\\\");
-        System.out.println("$o.a.$&".concat(oa[2][1])+"&".concat(oa[2][2])+"&".concat(oa[2][3])+"&".concat(oa[2][4])+"&".concat(oa[2][5])+"&\\\\");
-        System.out.println("$64^{-1}$&$".concat(residual[3][0])+"$&$".concat(residual[3][1])+"$&$".concat(residual[3][2])+"$&$".concat(residual[3][3])+"$&$".concat(residual[3][4])+"$& $".concat(residual[3][5])+"$\\\\");
-        System.out.println("$o.a.$&".concat(oa[3][1])+"&".concat(oa[3][2])+"&".concat(oa[3][3])+"&".concat(oa[3][4])+"&".concat(oa[3][5])+"&\\\\");
-        System.out.println("$128^{-1}$&$".concat(residual[4][0])+"$&$".concat(residual[4][1])+"$&$".concat(residual[4][2])+"$&$".concat(residual[4][3])+"$&$".concat(residual[4][4])+"$ & $".concat(residual[4][5])+"$\\\\");
-        System.out.println("$o.a.$&".concat(oa[4][1])+"&".concat(oa[4][2])+"&".concat(oa[4][3])+"&".concat(oa[4][4])+"&".concat(oa[4][5])+"&  \\\\");
-        System.out.println("$256^{-1}$&$".concat(residual[5][0])+"$&$".concat(residual[5][1])+"$&$".concat(residual[5][2])+"$&$".concat(residual[5][3])+"$&$".concat(residual[5][4])+"$& $".concat(residual[5][5])+"$\\\\");
-        System.out.println("$o.a.$&".concat(oa[5][1])+"&".concat(oa[5][2])+"&".concat(oa[5][3])+"&".concat(oa[5][4])+"&".concat(oa[5][5])+"&\\\\");
-        System.out.println("$512^{-1}$&$".concat(residual[6][0])+"$&$".concat(residual[6][1])+"$&$".concat(residual[6][2])+"$&$".concat(residual[6][3])+"$&$".concat(residual[6][4])+"$& $".concat(residual[6][5])+"$\\\\");
-        System.out.println("$o.a.$&".concat(oa[6][1])+"&".concat(oa[6][2])+"&".concat(oa[6][3])+"&".concat(oa[6][4])+"&".concat(oa[6][5])+"&\\\\");
+    public void latexTable(String[][] residual, String[][] oa) throws FileNotFoundException, UnsupportedEncodingException {
+        File file = new File(fileLocation);
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true), "UTF-8"))) {
+            bw.write("\\hline $1$&$".concat(residual[0][0]) + "$&$".concat(residual[0][1]) + "$&$".concat(residual[0][2]) + "$&$".concat(residual[0][3]) + "$& $".concat(residual[0][4]) + "$& $".concat(residual[0][5]) + "$\\\\");
+            bw.newLine();
+            bw.write("$o.a.$ &".concat(oa[0][1]) + "&".concat(oa[0][2]) + "& ".concat(oa[0][3]) + "&".concat(oa[0][4]) + "&".concat(oa[0][5]) + "&\\\\");
+            bw.newLine();
+            bw.write("$16^{-1}$&$".concat(residual[1][0]) + "$&$".concat(residual[1][1]) + "$&$".concat(residual[1][2]) + "$&$".concat(residual[1][3]) + "$&$".concat(residual[1][4]) + "$& $".concat(residual[1][5]) + "$\\\\");
+            bw.newLine();
+            bw.write("$o.a.$&".concat(oa[1][1]) + "&".concat(oa[1][2]) + "&".concat(oa[0][3]) + "&".concat(oa[0][4]) + "&".concat(oa[0][5]) + "&\\\\");
+            bw.newLine();
+            bw.write("$32^{-1}$&$".concat(residual[2][0]) + "$&$".concat(residual[2][1]) + "$&$".concat(residual[2][2]) + "$&$".concat(residual[2][3]) + "$&$".concat(residual[2][4]) + "$& $".concat(residual[2][5]) + "$\\\\");
+            bw.newLine();
+            bw.write("$o.a.$&".concat(oa[2][1]) + "&".concat(oa[2][2]) + "&".concat(oa[2][3]) + "&".concat(oa[2][4]) + "&".concat(oa[2][5]) + "&\\\\");
+            bw.newLine();
+            bw.write("$64^{-1}$&$".concat(residual[3][0]) + "$&$".concat(residual[3][1]) + "$&$".concat(residual[3][2]) + "$&$".concat(residual[3][3]) + "$&$".concat(residual[3][4]) + "$& $".concat(residual[3][5]) + "$\\\\");
+            bw.newLine();
+            bw.write("$o.a.$&".concat(oa[3][1]) + "&".concat(oa[3][2]) + "&".concat(oa[3][3]) + "&".concat(oa[3][4]) + "&".concat(oa[3][5]) + "&\\\\");
+            bw.newLine();
+            bw.write("$128^{-1}$&$".concat(residual[4][0]) + "$&$".concat(residual[4][1]) + "$&$".concat(residual[4][2]) + "$&$".concat(residual[4][3]) + "$&$".concat(residual[4][4]) + "$ & $".concat(residual[4][5]) + "$\\\\");
+            bw.newLine();
+            bw.write("$o.a.$&".concat(oa[4][1]) + "&".concat(oa[4][2]) + "&".concat(oa[4][3]) + "&".concat(oa[4][4]) + "&".concat(oa[4][5]) + "&  \\\\");
+            bw.newLine();
+            bw.write("$256^{-1}$&$".concat(residual[5][0]) + "$&$".concat(residual[5][1]) + "$&$".concat(residual[5][2]) + "$&$".concat(residual[5][3]) + "$&$".concat(residual[5][4]) + "$& $".concat(residual[5][5]) + "$\\\\");
+            bw.newLine();
+            bw.write("$o.a.$&".concat(oa[5][1]) + "&".concat(oa[5][2]) + "&".concat(oa[5][3]) + "&".concat(oa[5][4]) + "&".concat(oa[5][5]) + "&\\\\");
+            bw.newLine();
+            bw.write("$512^{-1}$&$".concat(residual[6][0]) + "$&$".concat(residual[6][1]) + "$&$".concat(residual[6][2]) + "$&$".concat(residual[6][3]) + "$&$".concat(residual[6][4]) + "$& $".concat(residual[6][5]) + "$\\\\");
+            bw.newLine();
+            bw.write("$o.a.$&".concat(oa[6][1]) + "&".concat(oa[6][2]) + "&".concat(oa[6][3]) + "&".concat(oa[6][4]) + "&".concat(oa[6][5]) + "&\\\\");
+            bw.newLine();
 
 
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-    public static void latexEnd(){
-        System.out.println("\\hline");
-        System.out.println("        \\end{tabular}");
-        System.out.println("    \\end{center}");
-        System.out.println("\\end{table}");
+        public void latexEnd(){
+            File file = new File(fileLocation);
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true),  "UTF-8"))){
+            bw.write("\\hline");
+            bw.newLine();
+            bw.write("        \\end{tabular}");
+            bw.newLine();
+            bw.write("    \\end{center}");
+            bw.newLine();
+            bw.write("\\end{table}");
+            bw.newLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
     }
 
 }
 public class ZX {
 
-    public static double findUexp (int N, double epsilon) {
+    public double findUexp(int N, double epsilon) {
         int L = 4*(N-1);
         double[] U = new double[L+1];
         double[] proizvU = new double[L+1];
@@ -285,7 +321,7 @@ public class ZX {
 
 
 
-    public static double findUsqrt (int N, double epsilon) {
+    public double findUsqrt (int N, double epsilon) {
         int L = 5*N;
         double[] U = new double[L+1];
         double[] proizvU = new double[L+1];
@@ -476,8 +512,8 @@ public class ZX {
         return maxNorm;
     }
 
-    public static void latexHead(){
-        File file = new File("/home/funforces/Articles/NewArticleDerivative/T3.tex");
+    public static void latexHeadDocument(String fileLocation){
+        File file = new File(fileLocation);
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true),  "UTF-8"))){
 
             bw.write("\\documentclass[14pt,a4paper]{extarticle}");
@@ -508,7 +544,7 @@ public class ZX {
             bw.newLine();
             bw.write("\\begin{tabular}[#1]{@{}c@{}}#2\\end{tabular}}");
             bw.newLine();
-            bw.write("\\renewcommand{\baselinestretch}{1.2}");
+            bw.write("\\renewcommand{\\baselinestretch}{1.2}");
             bw.newLine();
             bw.write("\\begin{document}");
             bw.newLine();
@@ -517,8 +553,8 @@ public class ZX {
         }
     }
 
-    public static void latexEnd(){
-        File file = new File("/home/funforces/Articles/NewArticleDerivative/T3.tex");
+    public static void latexEndDocument(String fileLocation){
+        File file = new File(fileLocation);
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true),  "UTF-8"))){
             bw.newLine();
             bw.write("\\end{document}");
@@ -527,23 +563,38 @@ public class ZX {
         }
     }
     public static void main(String[] args) throws IOException, InterruptedException {
-        OrderCode orderCode;
+        String fileLocation = "/home/funforces/Articles/NewArticleDerivative/T8.tex";
+        OrderCode orderCode = null;
         int node = 5;
         ReentrantLock lock = new ReentrantLock();
-        Derivative firstDerivative = new Derivative(OrderCode.FIRST,node, (x,epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), (x, epsilon) -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon,
-                (x, epsilon) -> Math.exp(-x/epsilon), (x, epsilon) -> -Math.exp(-x/epsilon)/epsilon);
+        Derivative firstDerivative = new Derivative(fileLocation, orderCode.FIRST, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.sin(Math.PI * x) - Math.exp(-x / epsilon) / epsilon,
+                (x, epsilon) -> Math.exp(-x / epsilon), (x, epsilon) -> -Math.exp(-x / epsilon) / epsilon);
 
-        Derivative secondDerivative = new Derivative(OrderCode.SECOND,node, (x,epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), (x,epsilon) -> -Math.PI*Math.PI*Math.cos(Math.PI * x) + Math.exp(-x/(epsilon))/(epsilon*epsilon),
-                (x, epsilon) -> Math.exp(-x/epsilon), (x, epsilon) -> Math.exp(-x/epsilon)/(epsilon*epsilon));
+        Derivative secondDerivative = new Derivative(fileLocation, orderCode.SECOND, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.PI * Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)) / (epsilon * epsilon),
+                (x, epsilon) -> Math.exp(-x / epsilon), (x, epsilon) -> Math.exp(-x / epsilon) / (epsilon * epsilon));
 
         DerivativeSearchThread firstDerivativeSearchThread = new DerivativeSearchThread(firstDerivative, lock);
         DerivativeSearchThread secondDerivativeSearchThread = new DerivativeSearchThread(secondDerivative, lock);
 
-        latexHead();
-        firstDerivativeSearchThread.start();
-        firstDerivativeSearchThread.join();
-        latexEnd();
-//        secondDerivativeSearchThread.start();
+        try {
+            ZX.latexHeadDocument(fileLocation);
+            firstDerivativeSearchThread.start();
+            secondDerivativeSearchThread.start();
+            firstDerivativeSearchThread.join();
+            secondDerivativeSearchThread.join();
+            ZX.latexEndDocument(fileLocation);
+        } catch (Exception e) {
+            System.out.println("Exception");
+        }
+
+        String[] command = {"gedit", fileLocation};
+        Process process = Runtime.getRuntime().exec(command);
+        process.getInputStream().transferTo(System.out);
+        process.getErrorStream().transferTo(System.out);
+        process.destroy();
+
+
 
     }
+
 }
