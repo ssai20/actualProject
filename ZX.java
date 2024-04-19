@@ -4,11 +4,17 @@ import java.util.function.BiFunction;
 
 enum OrderCode {
     FIRST,
-    SECOND
+    SECOND,
+}
+enum TableCode {
+    CLASSIC,
+    NEW,
+    MODIFICATION
 }
 class DerivativeSearchThread extends Thread{
     ReentrantLock lock;
     Derivative derivative;
+    TableCode tableCode;
 
     public DerivativeSearchThread(Derivative derivative, ReentrantLock lock) {
         this.lock = lock;
@@ -19,7 +25,9 @@ class DerivativeSearchThread extends Thread{
     public void run() {
         try {
             lock.lock();
-            derivative.latexTable();
+            derivative.latexTable(tableCode.CLASSIC);
+            derivative.latexTable(tableCode.NEW);
+            derivative.latexTable(tableCode.MODIFICATION);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
@@ -50,7 +58,7 @@ class Derivative {
     }
 
 
-    public double find (int N, double epsilon){
+    public double find (TableCode tableCode, int N, double epsilon){
         int L = (node - 1) * (N - 1);
         double[] u = new double[L+1];
         double[] uAccuracyDerivative = new double[L+1];
@@ -66,46 +74,111 @@ class Derivative {
 
         for (int i=0;i<=L;i++){
             u[i] = function.apply(x[i], epsilon);
-        }
-        for (int i=0;i<=L;i++) {
             uAccuracyDerivative[i] = accuracyDerivative.apply(x[i], epsilon);
-        }
-        for (int i=0;i<=L;i++) {
             Phi[i] = phi.apply(x[i], epsilon);
-        }
-        for (int i=0;i<=L;i++) {
             PhiDerivative[i] = phiDerivative.apply(x[i], epsilon);
-        }
-        for (int i=0;i<=L;i++) {
             uAccuracyDerivative[i] = accuracyDerivative.apply(x[i], epsilon);
         }
+//        for (int i=0;i<=L;i++) {
+//            uAccuracyDerivative[i] = accuracyDerivative.apply(x[i], epsilon);
+//        }
+//        for (int i=0;i<=L;i++) {
+//            Phi[i] = phi.apply(x[i], epsilon);
+//        }
+//        for (int i=0;i<=L;i++) {
+//            PhiDerivative[i] = phiDerivative.apply(x[i], epsilon);
+//        }
+//        for (int i=0;i<=L;i++) {
+//            uAccuracyDerivative[i] = accuracyDerivative.apply(x[i], epsilon);
+//        }
 
-        if (orderCode.compareTo(OrderCode.FIRST)==0) {
-            for (int i = 0; i < L / (node - 1); i++) {
-                for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
-                    uDerivativeNewMethod[j] = (u[(2 * i + 1) * (node - 1) / 2] - u[i * (node - 1)]) * PhiDerivative[j] / (Phi[(2 * i + 1) * (node - 1) / 2] - Phi[i * (node - 1)]);
+
+
+        if (tableCode.compareTo(TableCode.CLASSIC)==0) {
+            if (orderCode.compareTo(OrderCode.FIRST) == 0) {
+                for (int i = 0; i < L / (node - 1); i++) {
+                    for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
+                        uDerivativeNewMethod[j] = (u[(2 * i + 1) * (node - 1) / 2] - u[i * (node - 1)]) / h;
+                    }
+                }
+//                for (int i=2;i<=L-2;i=i+4){
+//
+//                    uDerivativeNewMethod[i-2] = (u[i] - u[i-2])/h;
+//                    uDerivativeNewMethod[i-1] = (u[i] - u[i-2])/h;
+//                    uDerivativeNewMethod[i] = (u[i] - u[i-2])/h;
+//                    uDerivativeNewMethod[i+1] = (u[i] - u[i-2])/h;
+//                    uDerivativeNewMethod[i+2] = (u[i] - u[i-2])/h;
+//
+//                }
+            }
+            if (orderCode.compareTo(OrderCode.SECOND) == 0) {
+                for (int i = 0; i < L / (node - 1); i++) {
+                    for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
+                        uDerivativeNewMethod[j] = (u[(i) * (node - 1)] - 2. * u[(2 * i + 1) * (node - 1) / 2] + u[(i + 1) * (node - 1)])  / (h*h);
+                    }
                 }
             }
         }
-        if (orderCode.compareTo(OrderCode.SECOND)==0) {
-            for (int i = 0; i < L / (node - 1); i++) {
-                for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
-                    uDerivativeNewMethod[j] = (u[(i) * (node - 1)] - 2.*u[(2 * i + 1) * (node - 1) / 2] + u[(i+1) * (node - 1)]) * PhiDerivative[j] / (Phi[(i) * (node - 1)] - 2.*Phi[(2 * i + 1) * (node - 1) / 2] + Phi[(i+1) * (node - 1)]) ;
+
+
+
+
+        if (tableCode.compareTo(TableCode.NEW)==0) {
+            if (orderCode.compareTo(OrderCode.FIRST) == 0) {
+                for (int i = 0; i < L / (node - 1); i++) {
+                    for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
+                        uDerivativeNewMethod[j] = (u[(2 * i + 1) * (node - 1) / 2] - u[i * (node - 1)]) * PhiDerivative[j] / (Phi[(2 * i + 1) * (node - 1) / 2] - Phi[i * (node - 1)]);
+                    }
+                }
+            }
+            if (orderCode.compareTo(OrderCode.SECOND) == 0) {
+                for (int i = 0; i < L / (node - 1); i++) {
+                    for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
+                        uDerivativeNewMethod[j] = (u[(i) * (node - 1)] - 2. * u[(2 * i + 1) * (node - 1) / 2] + u[(i + 1) * (node - 1)]) * PhiDerivative[j] / (Phi[(i) * (node - 1)] - 2. * Phi[(2 * i + 1) * (node - 1) / 2] + Phi[(i + 1) * (node - 1)]);
+                    }
                 }
             }
         }
 
         double[] norm = new double[L+1];
-        if (orderCode.compareTo(OrderCode.FIRST)==0) {
-            for (int i = 0; i <= L; i++) {
-                norm[i] = epsilon * Math.abs(uDerivativeNewMethod[i] - uAccuracyDerivative[i]);
+
+
+        if (orderCode == OrderCode.FIRST) {
+            if ((tableCode == TableCode.CLASSIC) || (tableCode == TableCode.NEW)) {
+                for (int i = 0; i <= L; i++) {
+                    norm[i] = epsilon * Math.abs(uDerivativeNewMethod[i] - uAccuracyDerivative[i]);
+                }
+            }
+            if (tableCode == TableCode.MODIFICATION){
+                for (int i = 0; i < L / (node - 1); i++) {
+                    for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
+                        norm[j] = (Math.cos(Math.PI*x[(2 * i + 1) * (node - 1) / 2]) - Math.cos(Math.PI*x[i * (node - 1)])) * Math.exp((x[i * (node - 1)]-x[j])/epsilon) / (1. - Math.exp(( x[i * (node - 1)] - x[(2 * i + 1) * (node - 1) / 2])/epsilon)) + epsilon*Math.PI*Math.sin(Math.PI*x[j]);
+                    }
+                }
             }
         }
-        if (orderCode.compareTo(OrderCode.SECOND)==0) {
-            for (int i = 0; i <= L; i++) {
-                norm[i] = epsilon*epsilon * Math.abs(uDerivativeNewMethod[i] - uAccuracyDerivative[i]);
-            }
+        if (orderCode == OrderCode.SECOND) {
+             if ((tableCode == TableCode.CLASSIC) || (tableCode == TableCode.NEW)) {
+                for (int i = 0; i <= L; i++) {
+                     norm[i] = epsilon * epsilon * Math.abs(uDerivativeNewMethod[i] - uAccuracyDerivative[i]);
+                }
+             }
+             if (tableCode == TableCode.MODIFICATION){
+                 for (int i = 0; i < L / (node - 1); i++) {
+                     for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
+                         norm[j] = (Math.cos(Math.PI*x[i * (node - 1)]) - 2. * Math.cos(Math.PI*x[(2 * i + 1) * (node - 1) / 2]) + Math.cos(Math.PI*x[(i + 1) * (node - 1)])) * Math.exp((x[i * (node - 1)]-x[j])/epsilon) / (1.- 2.*Math.exp((x[i * (node - 1)]-x[(2 * i + 1) * (node - 1) / 2])/epsilon) + Math.exp((x[i * (node - 1)] - x[(i+1) * (node - 1)])/epsilon)) + epsilon*epsilon*Math.PI*Math.PI*Math.cos(Math.PI*x[j]);
+                     }
+                 }
+             }
         }
+//        for (int i=2;i<=L-2;i=i+4){
+//            norm[i-2] = Math.exp((x[i-1]-x[i-2])/epsilon) * (Math.cos(Math.PI*x[i]) - Math.cos(Math.PI*x[i-1]))/(1.-Math.exp(-hh/epsilon)) + epsilon*Math.PI*Math.sin(Math.PI*x[i-2]);
+//            norm[i-1] = Math.exp((x[i-1]-x[i-1])/epsilon) * (Math.cos(Math.PI*x[i]) - Math.cos(Math.PI*x[i-1]))/(1.-Math.exp(-hh/epsilon)) + epsilon*Math.PI*Math.sin(Math.PI*x[i-1]);
+//            norm[i] = Math.exp((x[i-1]-x[i])/epsilon) * (Math.cos(Math.PI*x[i]) - Math.cos(Math.PI*x[i-1]))/(1.-Math.exp(-hh/epsilon)) + epsilon*Math.PI*Math.sin(Math.PI*x[i]);
+//            norm[i+1] = Math.exp((x[i-1]-x[i+1])/epsilon) * (Math.cos(Math.PI*x[i]) - Math.cos(Math.PI*x[i-1]))/(1.-Math.exp(-hh/epsilon)) + epsilon*Math.PI*Math.sin(Math.PI*x[i+1]);
+//            norm[i+2] = Math.exp((x[i-1]-x[i+2])/epsilon) * (Math.cos(Math.PI*x[i]) - Math.cos(Math.PI*x[i-1]))/(1.-Math.exp(-hh/epsilon)) + epsilon*Math.PI*Math.sin(Math.PI*x[i+2]);
+//        }
+
         double maxNorm = 0.;
         for(int i=0;i<=L;i++){
             if (maxNorm<norm[i]) maxNorm = norm[i];
@@ -113,14 +186,14 @@ class Derivative {
         return maxNorm;
     }
 
-    public void latexTable() throws FileNotFoundException, UnsupportedEncodingException {
+    public void latexTable(TableCode tableCode) throws FileNotFoundException, UnsupportedEncodingException {
         String residual[][] = new String[7][6];
         String oac[][] = new String[7][6];
 //        double a = 0.;
         //double epsilon = 1./1.;
 //        int node = 5;
 //        Derivative firstDerivative = new Derivative(node, x -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), x -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon, x -> Math.exp(-x/epsilon), x -> -Math.exp(-x/epsilon)/epsilon);
-        latexInitial();
+        latexInitial(tableCode);
         int kRes=0;
         int kOa=0;
         for (int eps = 8;eps<=512;eps=eps*2) {
@@ -133,7 +206,7 @@ class Derivative {
             for (int i = 32; i <= 1024; i = 2 * i) {
                 //            double b = findUexp(i, epsilon);
 //                Derivative firstDerivative = new Derivative(node, x -> Math.cos(Math.PI * x) + Math.exp(-x/(epsilon)), x -> -Math.PI*Math.sin(Math.PI*x) - Math.exp(-x/epsilon)/epsilon, x -> Math.exp(-x/epsilon), x -> -Math.exp(-x/epsilon)/epsilon);
-                double b = find(i, epsilon);
+                double b = find(tableCode, i, epsilon);
 //                java.text.NumberFormat formatter = new java.text.DecimalFormat("0.##E0");
 //                String formattedDouble = formatter.format(b).replace(",", ".").replace("E", "e");
                 String formattedDouble = String.format("%6.2e", b).replace(",", ".");
@@ -159,11 +232,21 @@ class Derivative {
         latexEnd();
     }
 
-    public void latexInitial (){
+    public void latexInitial (TableCode tableCode){
         File file = new File(fileLocation);
-        String title = "Погрешность улучшенной формулы для вычисления";
-        if (orderCode == OrderCode.FIRST){title = title.concat(" первой \\\\производной в "+ node + " точках");}
-        if (orderCode == OrderCode.SECOND){title = title.concat(" второй \\\\производной в "+ node + " точках");}
+        String title = "";
+        if (tableCode==TableCode.CLASSIC){
+            title = title.concat("Погрешность классической формулы \\\\для вычисления");
+        }
+        if (tableCode==TableCode.NEW){
+            title = title.concat("Погрешность улучшенной формулы \\\\для вычисления");
+        }
+        if (tableCode==TableCode.MODIFICATION){
+            title = title.concat("Погрешность улучшенной формулы  \\\\с модификацией для вычисления");
+        }
+
+        if (orderCode == OrderCode.FIRST){title = title.concat(" первой производной в "+ node + " точках");}
+        if (orderCode == OrderCode.SECOND){title = title.concat(" второй производной в "+ node + " точках");}
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true),  "UTF-8"))){
             bw.write("\\begin{table} [!htb]");
             bw.newLine();
@@ -181,16 +264,10 @@ class Derivative {
             e1.printStackTrace();
         }
 //        System.out.println("Данные отправлены в файл: "+fileOutPath);
+
     }
 
-    public static void AlatexInitial(){
-        System.out.println("\\begin{table} [!htb]");
-        System.out.println("    \\caption { Погрешность классической формулы для вычисления второй производной в 5 точках}");
-        System.out.println("        \\begin{center}");
-        System.out.println("\\begin{tabular}{c|c|c|c|c|c|c}");
-        System.out.println("\\hline $\\varepsilon$ & \\multicolumn{6}{c}{$N$} \\\\");
-        System.out.println("\\cline{2-7}& $32$&$64$& $128$&$256$&$512$&$1024$ \\\\");
-    }
+
     public void latexTable(String[][] residual, String[][] oa) throws FileNotFoundException, UnsupportedEncodingException {
         File file = new File(fileLocation);
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true), "UTF-8"))) {
@@ -580,10 +657,10 @@ public class ZX {
         process2.destroy();
     }
     public static void main(String[] args) throws IOException, InterruptedException {
-        String fileLocation = "/home/funforces/Articles/NewArticleDerivative/T24.tex";
+        String fileLocation = "/home/funforces/Articles/NewArticleDerivative/SixTables21.tex";
         OrderCode orderCode = null;
         int node = 5;
-        ReentrantLock lock = new ReentrantLock();
+        ReentrantLock lock = new ReentrantLock();                                                                                                                         //(-Math.PI*Math.PI*Math.cos(Math.PI*x[i]) + Math.exp(-x[i]/epsilon)/(epsilon*epsilon)))
         Derivative firstDerivative = new Derivative(fileLocation, orderCode.FIRST, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.sin(Math.PI * x) - Math.exp(-x / epsilon) / epsilon,
                 (x, epsilon) -> Math.exp(-x / epsilon), (x, epsilon) -> -Math.exp(-x / epsilon) / epsilon);
 
@@ -594,34 +671,16 @@ public class ZX {
         DerivativeSearchThread secondDerivativeSearchThread = new DerivativeSearchThread(secondDerivative, lock);
 
         try {
-            ZX.latexHeadDocument(fileLocation);
+            latexHeadDocument(fileLocation);
             firstDerivativeSearchThread.start();
             secondDerivativeSearchThread.start();
             firstDerivativeSearchThread.join();
             secondDerivativeSearchThread.join();
-            ZX.latexEndDocument(fileLocation);
+            latexEndDocument(fileLocation);
             compileAndOpenPDFFile(fileLocation);
         } catch (Exception e) {
             System.out.println("Exception");
         }
-
-//        String[] command = {"pdflatex", "--output-directory=/home/funforces/Articles/NewArticleDerivative/", fileLocation};
-//        Process process = Runtime.getRuntime().exec(command);
-//        process.getInputStream().transferTo(System.out);
-//        process.getErrorStream().transferTo(System.out);
-//        process.destroy();
-//        String[] command2 = {"open", "/home/funforces/Articles/NewArticleDerivative/T14.pdf"};
-//        Process process2 = Runtime.getRuntime().exec(command2);
-//        process2.getInputStream().transferTo(System.out);
-//        process2.getErrorStream().transferTo(System.out);
-//        process2.destroy();
-
-//        pdflatex --output-directory=/home/funforces/Articles/NewArticleDerivative/ /home/funforces/Articles/NewArticleDerivative/T5.tex | open /home/funforces/Articles/NewArticleDerivative/T5.pdf
-//
-//        pdflatex --output-directory=/home/funforces/Articles/NewArticleDerivative/ /home/funforces/Articles/NewArticleDerivative/T9.tex
-//
-//        open /home/funforces/Articles/NewArticleDerivative/T9.pdf
-
 
     }
 
