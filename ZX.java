@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.Scanner;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 
@@ -27,7 +28,7 @@ class DerivativeSearchThread extends Thread{
             lock.lock();
             derivative.latexTable(tableCode.CLASSIC);
             derivative.latexTable(tableCode.NEW);
-            derivative.latexTable(tableCode.MODIFICATION);
+//            derivative.latexTable(tableCode.MODIFICATION);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
@@ -39,6 +40,7 @@ class DerivativeSearchThread extends Thread{
 }
 
 class Derivative {
+    String F;
     String fileLocation;
     OrderCode orderCode;
     int node;
@@ -47,7 +49,8 @@ class Derivative {
     BiFunction<Double, Double, Double> phiDerivative;
     BiFunction<Double, Double, Double> accuracyDerivative;
     public Derivative (){}
-    public Derivative (String fileLocation, OrderCode orderCode, int node, BiFunction<Double, Double, Double> function, BiFunction<Double, Double, Double> accuracyDerivative, BiFunction<Double, Double, Double> phi, BiFunction<Double, Double, Double> phiDerivative){
+    public Derivative (String F, String fileLocation, OrderCode orderCode, int node, BiFunction<Double, Double, Double> function, BiFunction<Double, Double, Double> accuracyDerivative, BiFunction<Double, Double, Double> phi, BiFunction<Double, Double, Double> phiDerivative){
+        this.F = F;
         this.node = node;
         this.function = function;
         this.accuracyDerivative = accuracyDerivative;
@@ -77,7 +80,6 @@ class Derivative {
             uAccuracyDerivative[i] = accuracyDerivative.apply(x[i], epsilon);
             Phi[i] = phi.apply(x[i], epsilon);
             PhiDerivative[i] = phiDerivative.apply(x[i], epsilon);
-            uAccuracyDerivative[i] = accuracyDerivative.apply(x[i], epsilon);
         }
 //        for (int i=0;i<=L;i++) {
 //            uAccuracyDerivative[i] = accuracyDerivative.apply(x[i], epsilon);
@@ -98,7 +100,7 @@ class Derivative {
             if (orderCode.compareTo(OrderCode.FIRST) == 0) {
                 for (int i = 0; i < L / (node - 1); i++) {
                     for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
-                        uDerivativeNewMethod[j] = (u[(2 * i + 1) * (node - 1) / 2] - u[i * (node - 1)]) / h;
+                        uDerivativeNewMethod[j] = (u[(2 * i + 1) * (node - 1) / 2] - u[i * (node - 1)]) / (x[(2 * i + 1) * (node - 1) / 2]-x[i * (node - 1)]);
                     }
                 }
 //                for (int i=2;i<=L-2;i=i+4){
@@ -114,7 +116,7 @@ class Derivative {
             if (orderCode.compareTo(OrderCode.SECOND) == 0) {
                 for (int i = 0; i < L / (node - 1); i++) {
                     for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
-                        uDerivativeNewMethod[j] = (u[(i) * (node - 1)] - 2. * u[(2 * i + 1) * (node - 1) / 2] + u[(i + 1) * (node - 1)])  / (h*h);
+                        uDerivativeNewMethod[j] = (u[(i) * (node - 1)] - 2. * u[(2 * i + 1) * (node - 1) / 2] + u[(i + 1) * (node - 1)])  / ((x[(2 * i + 1) * (node - 1) / 2]-x[i * (node - 1)])*(x[(2 * i + 1) * (node - 1) / 2]-x[i * (node - 1)]));
                     }
                 }
             }
@@ -245,8 +247,9 @@ class Derivative {
             title = title.concat("Погрешность улучшенной формулы  \\\\с модификацией для вычисления");
         }
 
-        if (orderCode == OrderCode.FIRST){title = title.concat(" первой производной в "+ node + " точках");}
-        if (orderCode == OrderCode.SECOND){title = title.concat(" второй производной в "+ node + " точках");}
+        if (orderCode == OrderCode.FIRST){title = title.concat(" первой производной в "+ node + " точках при ");}
+        if (orderCode == OrderCode.SECOND){title = title.concat(" второй производной в "+ node + " точках при ");}
+        title = title.concat(F);
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true),  "UTF-8"))){
             bw.write("\\begin{table} [!htb]");
             bw.newLine();
@@ -645,7 +648,9 @@ public class ZX {
 
     public static void compileAndOpenPDFFile (String fileLocation) throws IOException {
         String pdfFile = fileLocation.replace("tex","pdf");
-        String[] command = {"pdflatex", "--output-directory=/home/funforces/Articles/NewArticleDerivative/", fileLocation};
+        String directoryOfFile = fileLocation.substring(0, fileLocation.lastIndexOf("/")+1);
+//        String[] command = {"pdflatex", "--output-directory=/home/funforces/Articles/NewArticleDerivative/ForScientificSupervisor/", fileLocation};
+        String[] command = {"pdflatex", "--output-directory=".concat(directoryOfFile), fileLocation};
         Process process = Runtime.getRuntime().exec(command);
         process.getInputStream().transferTo(System.out);
         process.getErrorStream().transferTo(System.out);
@@ -657,25 +662,41 @@ public class ZX {
         process2.destroy();
     }
     public static void main(String[] args) throws IOException, InterruptedException {
-        String fileLocation = "/home/funforces/Articles/NewArticleDerivative/SixTables21.tex";
+        Scanner in = new Scanner(System.in);
+        System.out.print("Input name of file: ");
+        String name = in.nextLine();
+        in.close();
+        String fileLocation = "/home/funforces/Articles/NewArticleDerivative/";
+        fileLocation = fileLocation.concat(name).concat(".tex");
         OrderCode orderCode = null;
-        int node = 5;
+        int node = 3;
         ReentrantLock lock = new ReentrantLock();                                                                                                                         //(-Math.PI*Math.PI*Math.cos(Math.PI*x[i]) + Math.exp(-x[i]/epsilon)/(epsilon*epsilon)))
-        Derivative firstDerivative = new Derivative(fileLocation, orderCode.FIRST, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.sin(Math.PI * x) - Math.exp(-x / epsilon) / epsilon,
+        Derivative firstDerivative = new Derivative("$\\Phi = e^{-\\frac{x}{\\varepsilon}}$", fileLocation, orderCode.FIRST, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.sin(Math.PI * x) - Math.exp(-x / epsilon) / epsilon,
                 (x, epsilon) -> Math.exp(-x / epsilon), (x, epsilon) -> -Math.exp(-x / epsilon) / epsilon);
 
-        Derivative secondDerivative = new Derivative(fileLocation, orderCode.SECOND, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.PI * Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)) / (epsilon * epsilon),
+        Derivative secondDerivative = new Derivative("$\\Phi = e^{-\\frac{x}{\\varepsilon}}$", fileLocation, orderCode.SECOND, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.PI * Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)) / (epsilon * epsilon),
                 (x, epsilon) -> Math.exp(-x / epsilon), (x, epsilon) -> Math.exp(-x / epsilon) / (epsilon * epsilon));
+
+        Derivative thirdDerivative = new Derivative("$\\Phi = \\sqrt{x+ \\varepsilon}$", fileLocation, orderCode.FIRST, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.sin(Math.PI * x) - Math.exp(-x / epsilon) / epsilon,
+                (x, epsilon) ->Math.sqrt(x + epsilon), (x, epsilon) -> 1./(2.*Math.sqrt(x+epsilon)));
+        Derivative fourthDerivative = new Derivative("$\\Phi = \\sqrt{x+ \\varepsilon}$", fileLocation, orderCode.SECOND, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.PI * Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)) / (epsilon * epsilon),
+                (x, epsilon) ->Math.sqrt(x + epsilon), (x, epsilon) -> -1./(4.*(x + epsilon)*Math.sqrt(x+epsilon)));
 
         DerivativeSearchThread firstDerivativeSearchThread = new DerivativeSearchThread(firstDerivative, lock);
         DerivativeSearchThread secondDerivativeSearchThread = new DerivativeSearchThread(secondDerivative, lock);
+        DerivativeSearchThread thirdDerivativeSearchThread = new DerivativeSearchThread(thirdDerivative, lock);
+        DerivativeSearchThread fourthDerivativeSearchThread = new DerivativeSearchThread(fourthDerivative, lock);
 
         try {
             latexHeadDocument(fileLocation);
             firstDerivativeSearchThread.start();
             secondDerivativeSearchThread.start();
+            thirdDerivativeSearchThread.start();
+            fourthDerivativeSearchThread.start();
             firstDerivativeSearchThread.join();
             secondDerivativeSearchThread.join();
+            thirdDerivativeSearchThread.join();
+            fourthDerivativeSearchThread.join();
             latexEndDocument(fileLocation);
             compileAndOpenPDFFile(fileLocation);
         } catch (Exception e) {
