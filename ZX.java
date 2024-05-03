@@ -28,7 +28,7 @@ class DerivativeSearchThread extends Thread{
             lock.lock();
             derivative.latexTable(tableCode.CLASSIC);
             derivative.latexTable(tableCode.NEW);
-//            derivative.latexTable(tableCode.MODIFICATION);
+            derivative.latexTable(tableCode.MODIFICATION);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
@@ -48,7 +48,6 @@ class Derivative {
     BiFunction<Double, Double, Double> phi;
     BiFunction<Double, Double, Double> phiDerivative;
     BiFunction<Double, Double, Double> accuracyDerivative;
-    public Derivative (){}
     public Derivative (String F, String fileLocation, OrderCode orderCode, int node, BiFunction<Double, Double, Double> function, BiFunction<Double, Double, Double> accuracyDerivative, BiFunction<Double, Double, Double> phi, BiFunction<Double, Double, Double> phiDerivative){
         this.F = F;
         this.node = node;
@@ -154,7 +153,8 @@ class Derivative {
             if (tableCode == TableCode.MODIFICATION){
                 for (int i = 0; i < L / (node - 1); i++) {
                     for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
-                        norm[j] = (Math.cos(Math.PI*x[(2 * i + 1) * (node - 1) / 2]) - Math.cos(Math.PI*x[i * (node - 1)])) * Math.exp((x[i * (node - 1)]-x[j])/epsilon) / (1. - Math.exp(( x[i * (node - 1)] - x[(2 * i + 1) * (node - 1) / 2])/epsilon)) + epsilon*Math.PI*Math.sin(Math.PI*x[j]);
+//                        norm[j] = (Math.cos(Math.PI*x[(2 * i + 1) * (node - 1) / 2]) - Math.cos(Math.PI*x[i * (node - 1)])) * Math.exp((x[i * (node - 1)]-x[j])/epsilon) / (1. - Math.exp(( x[i * (node - 1)] - x[(2 * i + 1) * (node - 1) / 2])/epsilon)) + epsilon*Math.PI*Math.sin(Math.PI*x[j]);
+                        norm[j] = (Math.cos(Math.PI*x[(2 * i + 1) * (node - 1) / 2])-Math.cos(Math.PI*x[i * (node - 1)]))*epsilon/((2.*Math.sqrt(x[j]+epsilon))*(Math.sqrt(x[(2 * i + 1) * (node - 1) / 2]+epsilon)-Math.sqrt(x[i * (node - 1)]+epsilon))) + epsilon*Math.PI*Math.sin(Math.PI*x[j]);
                     }
                 }
             }
@@ -163,12 +163,14 @@ class Derivative {
              if ((tableCode == TableCode.CLASSIC) || (tableCode == TableCode.NEW)) {
                 for (int i = 0; i <= L; i++) {
                      norm[i] = epsilon * epsilon * Math.abs(uDerivativeNewMethod[i] - uAccuracyDerivative[i]);
+
                 }
              }
              if (tableCode == TableCode.MODIFICATION){
                  for (int i = 0; i < L / (node - 1); i++) {
                      for (int j = i * (node - 1); j <= (node - 1) * (i + 1); j++) {
-                         norm[j] = (Math.cos(Math.PI*x[i * (node - 1)]) - 2. * Math.cos(Math.PI*x[(2 * i + 1) * (node - 1) / 2]) + Math.cos(Math.PI*x[(i + 1) * (node - 1)])) * Math.exp((x[i * (node - 1)]-x[j])/epsilon) / (1.- 2.*Math.exp((x[i * (node - 1)]-x[(2 * i + 1) * (node - 1) / 2])/epsilon) + Math.exp((x[i * (node - 1)] - x[(i+1) * (node - 1)])/epsilon)) + epsilon*epsilon*Math.PI*Math.PI*Math.cos(Math.PI*x[j]);
+//                         norm[j] = (Math.cos(Math.PI*x[i * (node - 1)]) - 2. * Math.cos(Math.PI*x[(2 * i + 1) * (node - 1) / 2]) + Math.cos(Math.PI*x[(i + 1) * (node - 1)])) * Math.exp((x[i * (node - 1)]-x[j])/epsilon) / (1.- 2.*Math.exp((x[i * (node - 1)]-x[(2 * i + 1) * (node - 1) / 2])/epsilon) + Math.exp((x[i * (node - 1)] - x[(i+1) * (node - 1)])/epsilon)) + epsilon*epsilon*Math.PI*Math.PI*Math.cos(Math.PI*x[j]);
+                         norm[j] = -epsilon*epsilon*(Math.cos(Math.PI*x[i * (node - 1)]) - 2.*Math.cos(Math.PI*x[(2 * i + 1) * (node - 1) / 2]) + Math.cos(Math.PI*x[(i+1) * (node - 1)]))/( (Math.sqrt(x[i * (node - 1)]+epsilon)-2.*Math.sqrt(x[(2 * i + 1) * (node - 1) / 2]+epsilon)+Math.sqrt(x[(i+1) * (node - 1)]+epsilon)) * 4.*(x[j]+epsilon)*Math.sqrt(x[j]+epsilon)) + epsilon*epsilon*Math.PI*Math.PI*Math.cos(Math.PI*x[j]);
                      }
                  }
              }
@@ -669,7 +671,7 @@ public class ZX {
         String fileLocation = "/home/funforces/Articles/NewArticleDerivative/";
         fileLocation = fileLocation.concat(name).concat(".tex");
         OrderCode orderCode = null;
-        int node = 3;
+        int node = 9;
         ReentrantLock lock = new ReentrantLock();                                                                                                                         //(-Math.PI*Math.PI*Math.cos(Math.PI*x[i]) + Math.exp(-x[i]/epsilon)/(epsilon*epsilon)))
         Derivative firstDerivative = new Derivative("$\\Phi = e^{-\\frac{x}{\\varepsilon}}$", fileLocation, orderCode.FIRST, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.sin(Math.PI * x) - Math.exp(-x / epsilon) / epsilon,
                 (x, epsilon) -> Math.exp(-x / epsilon), (x, epsilon) -> -Math.exp(-x / epsilon) / epsilon);
@@ -677,24 +679,27 @@ public class ZX {
         Derivative secondDerivative = new Derivative("$\\Phi = e^{-\\frac{x}{\\varepsilon}}$", fileLocation, orderCode.SECOND, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.PI * Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)) / (epsilon * epsilon),
                 (x, epsilon) -> Math.exp(-x / epsilon), (x, epsilon) -> Math.exp(-x / epsilon) / (epsilon * epsilon));
 
-        Derivative thirdDerivative = new Derivative("$\\Phi = \\sqrt{x+ \\varepsilon}$", fileLocation, orderCode.FIRST, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.sin(Math.PI * x) - Math.exp(-x / epsilon) / epsilon,
-                (x, epsilon) ->Math.sqrt(x + epsilon), (x, epsilon) -> 1./(2.*Math.sqrt(x+epsilon)));
-        Derivative fourthDerivative = new Derivative("$\\Phi = \\sqrt{x+ \\varepsilon}$", fileLocation, orderCode.SECOND, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)), (x, epsilon) -> -Math.PI * Math.PI * Math.cos(Math.PI * x) + Math.exp(-x / (epsilon)) / (epsilon * epsilon),
-                (x, epsilon) ->Math.sqrt(x + epsilon), (x, epsilon) -> -1./(4.*(x + epsilon)*Math.sqrt(x+epsilon)));
+        Derivative thirdDerivative = new Derivative("$\\Phi = \\sqrt{x+\\varepsilon}$", fileLocation, orderCode.FIRST, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.sqrt(x + epsilon), (x, epsilon) -> -Math.PI * Math.sin(Math.PI * x) + 1./(2.*Math.sqrt(x + epsilon)),
+                (x, epsilon) -> Math.sqrt(x + epsilon), (x, epsilon) -> 1./(2.*Math.sqrt(x + epsilon)));
 
-        DerivativeSearchThread firstDerivativeSearchThread = new DerivativeSearchThread(firstDerivative, lock);
-        DerivativeSearchThread secondDerivativeSearchThread = new DerivativeSearchThread(secondDerivative, lock);
+        Derivative fourthDerivative = new Derivative("$\\Phi = \\sqrt{x+\\varepsilon}$", fileLocation, orderCode.SECOND, node, (x, epsilon) -> Math.cos(Math.PI * x) + Math.sqrt(x + epsilon), (x, epsilon) -> -Math.PI * Math.PI * Math.cos(Math.PI * x) - 1./(4.*(x+epsilon)*Math.sqrt(x + epsilon)),
+                (x, epsilon) -> Math.sqrt(x + epsilon), (x, epsilon) -> -1./(4.*(x+epsilon)*Math.sqrt(x + epsilon)));
+
+
+
+//        DerivativeSearchThread firstDerivativeSearchThread = new DerivativeSearchThread(firstDerivative, lock);
+//        DerivativeSearchThread secondDerivativeSearchThread = new DerivativeSearchThread(secondDerivative, lock);
         DerivativeSearchThread thirdDerivativeSearchThread = new DerivativeSearchThread(thirdDerivative, lock);
         DerivativeSearchThread fourthDerivativeSearchThread = new DerivativeSearchThread(fourthDerivative, lock);
 
         try {
             latexHeadDocument(fileLocation);
-            firstDerivativeSearchThread.start();
-            secondDerivativeSearchThread.start();
+//            firstDerivativeSearchThread.start();
+//            secondDerivativeSearchThread.start();
             thirdDerivativeSearchThread.start();
             fourthDerivativeSearchThread.start();
-            firstDerivativeSearchThread.join();
-            secondDerivativeSearchThread.join();
+//            firstDerivativeSearchThread.join();
+//            secondDerivativeSearchThread.join();
             thirdDerivativeSearchThread.join();
             fourthDerivativeSearchThread.join();
             latexEndDocument(fileLocation);
