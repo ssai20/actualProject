@@ -20,6 +20,35 @@ class JDBCSolutionBase {
     public static final String URL = "jdbc:mysql://localhost:3306/solutions?useUnicode=yescharacterEncoding=UTF8&useSSL=false";
     public static final String USER = "root";
     public static final String PASSWORD = "Teheran43!";
+
+    public static boolean loadDriver(){
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            return true;
+        } catch (ClassNotFoundException e) {
+            System.out.println("Error loading JDBC Driver ");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
+    public static void DataBase(String query){
+        if (!loadDriver()) {
+            return;
+        }
+
+        try (Connection con = DriverManager.getConnection(JDBCSolutionBase.URL, JDBCSolutionBase.USER, JDBCSolutionBase.PASSWORD); Statement stmt = con.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
+            while (rs.next()) {
+                int count = rs.getInt(1);
+                System.out.println("Total number of tables = " + count);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("Что-то не то");
+        }
+    }
+
 }
 
 
@@ -675,48 +704,8 @@ public class ZX {
         process2.destroy();
     }
     public static void main(String[] args) throws IOException, InterruptedException {
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rs = null;
 
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            System.out.println("Error loading JDBC Driver ");
-            e.printStackTrace();
-            return;
-        }
-        String query = "select count(*) from solution";
-        try {
-            con = DriverManager.getConnection(JDBCSolutionBase.URL, JDBCSolutionBase.USER, JDBCSolutionBase.PASSWORD);
-            stmt = con.createStatement();
-            rs = stmt.executeQuery(query);
-            while (rs.next()) {
-                int count = rs.getInt(1);
-                System.out.println("Total number of tables = "+count);
-            }
-        } catch (SQLException sqlEx){
-            sqlEx.printStackTrace();
-        } finally {
-            try {
-                if (con != null) con.close();
-            } catch (SQLException e){
-                e.printStackTrace();
-            }
-            try {
-                if (stmt != null) stmt.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-            try {
-                if (rs != null) rs.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-
-
-
+        JDBCSolutionBase.DataBase("select count(*) from solution");
 
         Scanner in = new Scanner(System.in);
         System.out.print("Input name of file: ");
